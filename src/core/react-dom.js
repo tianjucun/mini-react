@@ -25,18 +25,16 @@ function createDOM(VNode) {
   const { type, props } = VNode;
   const dom = document.createElement(type);
   const { children, ...attrs } = props;
-  if (typeof children === 'object') {
+  if (Array.isArray(children)) {
+    mountArray(children, dom);
+  } else if (typeof children === 'object') {
     mount(children, dom);
   } else if (typeof children === 'string') {
     dom.appendChild(document.createTextNode(children));
-  } else if (Array.isArray(children)) {
-    mountArray(children, dom);
   }
 
   // 处理元素的 attribute
-  for (let attr of Object.keys(attrs)) {
-    dom.setAttribute(attr, attrs[attr]);
-  }
+  setPropsForDOM(dom, attrs);
 
   return dom;
 }
@@ -44,11 +42,24 @@ function createDOM(VNode) {
 function mountArray(children, dom) {
   for (let child of children) {
     if (typeof child === 'string') {
-      dom.appendChild(document.createTextNode(children));
+      dom.appendChild(document.createTextNode(child));
     } else {
       mount(child, dom);
     }
   }
+}
+
+function setPropsForDOM(dom, props) {
+  Object.keys(props).forEach((key) => {
+    const prop = props[key];
+    if (key === 'style') {
+      Object.keys(prop).forEach((styleKey) => {
+        dom.style[styleKey] = prop[styleKey];
+      });
+    } else {
+      dom.setAttribute(key, prop);
+    }
+  });
 }
 
 const ReactDOM = {
