@@ -1,6 +1,7 @@
 import React from './core/react';
 // import React from 'react';
 import ReactDOM from './core/react-dom';
+import Goods from './Goods';
 
 // ReactDOM.createRoot(document.getElementById('root')).render(
 //   <h1>Hello React</h1>
@@ -23,7 +24,7 @@ function App(props) {
   );
 }
 
-ReactDOM.render(<App msg='hello react' />, document.getElementById('root'));
+ReactDOM.render(<Goods msg='hello react' />, document.getElementById('root'));
 
 // console.log(
 //   <h1 id='content' data-name='react' style='color: red'>

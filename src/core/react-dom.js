@@ -28,6 +28,10 @@ function createDOM(VNode) {
     return null;
   }
 
+  if (typeof VNode.type === 'function' && VNode.type.IS_CLASS_COMPONENT) {
+    return getDOMFromClassComponent(VNode);
+  }
+
   if (typeof VNode.type === 'function') {
     // 处理函数组件
     return getDOMFromFunctionComponent(VNode);
@@ -64,9 +68,32 @@ function createDOM(VNode) {
 function getDOMFromFunctionComponent(VNode) {
   const { type, props } = VNode;
   const renderVNode = type(props);
+  if (!renderVNode) {
+    return null;
+  }
   return createDOM(renderVNode);
 }
 
+/**
+ * 处理类组件
+ * @param {*} VNode
+ * @returns
+ */
+function getDOMFromClassComponent(VNode) {
+  const { type, props } = VNode;
+  const instance = new type(props);
+  const renderVNode = instance.render();
+  if (!renderVNode) {
+    return null;
+  }
+  return createDOM(renderVNode);
+}
+
+/**
+ * 处理子节点挂载
+ * @param {*} children
+ * @param {*} dom
+ */
 function mountArray(children, dom) {
   for (let child of children) {
     if (typeof child === 'string') {

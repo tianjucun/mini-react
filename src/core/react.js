@@ -1,4 +1,5 @@
 import { REACT_ELEMENT_TYPE } from './util';
+import Component from './Component';
 
 function createElement(type, props, ...children) {
   console.log('createElement: ', arguments);
@@ -19,4 +20,5 @@ function createElement(type, props, ...children) {
 
 export default {
   createElement,
+  Component,
 };
