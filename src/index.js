@@ -6,12 +6,21 @@ import ReactDOM from './core/react-dom';
 //   <h1>Hello React</h1>
 // );
 
-ReactDOM.render(
-  <h1 id='content' data-name='react' style={{ color: 'red' }}>
-    Hello React<span className='text'>123</span>
-  </h1>,
-  document.getElementById('root')
-);
+function App(props) {
+  return (
+    <h1
+      msg={props.msg}
+      sign='functional'
+      id='content'
+      data-name='react'
+      style={{ color: 'red' }}
+    >
+      Hello React<span className='text'>123</span>
+    </h1>
+  );
+}
+
+ReactDOM.render(<App msg='hello react' />, document.getElementById('root'));
 
 // console.log(
 //   <h1 id='content' data-name='react' style='color: red'>

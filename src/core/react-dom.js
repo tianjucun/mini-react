@@ -13,9 +13,24 @@ function mount(VNode, containerDOM) {
   }
 }
 
+/**
+ * 根据传入的虚拟 DOM 创建真实 DOM
+ * 1. 处理函数组件
+ * 2. 处理普通的元素
+ *  2.1 根据 type 创建 DOM
+ *  2.2 处理子元素
+ *  2.3 处理元素的 attribute
+ * @param {*} VNode
+ * @returns
+ */
 function createDOM(VNode) {
   if (VNode.$$typeof !== REACT_ELEMENT_TYPE) {
     return null;
+  }
+
+  if (typeof VNode.type === 'function') {
+    // 处理函数组件
+    return getDOMFromFunctionComponent(VNode);
   }
 
   // 1. 根据 type 创建 DOM
@@ -39,6 +54,19 @@ function createDOM(VNode) {
   return dom;
 }
 
+/**
+ * 处理函数组件
+ * 函数组件本质就是通过函数获取到对应的 jsx elements(VNode)
+ * 然后将对应的 VNode 转换为真实的 DOM
+ * @param {*} VNode
+ * @returns
+ */
+function getDOMFromFunctionComponent(VNode) {
+  const { type, props } = VNode;
+  const renderVNode = type(props);
+  return createDOM(renderVNode);
+}
+
 function mountArray(children, dom) {
   for (let child of children) {
     if (typeof child === 'string') {
@@ -49,6 +77,12 @@ function mountArray(children, dom) {
   }
 }
 
+/**
+ * 处理元素的 props
+ * 1. 特殊处理 style 样式
+ * @param {*} dom
+ * @param {*} props
+ */
 function setPropsForDOM(dom, props) {
   Object.keys(props).forEach((key) => {
     const prop = props[key];
