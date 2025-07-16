@@ -15,7 +15,10 @@ function App(props) {
       data-name='react'
       style={{ color: 'red' }}
     >
-      Hello React<span className='text'>123</span>
+      Hello React
+      <span className='text' style='color: blue'>
+        123
+      </span>
     </h1>
   );
 }

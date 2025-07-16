@@ -85,13 +85,17 @@ function mountArray(children, dom) {
  */
 function setPropsForDOM(dom, props) {
   Object.keys(props).forEach((key) => {
-    const prop = props[key];
+    const propValue = props[key];
     if (key === 'style') {
-      Object.keys(prop).forEach((styleKey) => {
-        dom.style[styleKey] = prop[styleKey];
-      });
+      if (typeof propValue === 'string') {
+        dom.style = propValue;
+      } else {
+        Object.keys(propValue).forEach((styleKey) => {
+          dom.style[styleKey] = propValue[styleKey];
+        });
+      }
     } else {
-      dom.setAttribute(key, prop);
+      dom.setAttribute(key, propValue);
     }
   });
 }
