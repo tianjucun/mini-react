@@ -1,4 +1,4 @@
-import { React, ReactDOM } from './core/react-interface';
+import { React, ReactDOM } from '@/react-interface';
 
 import Goods from './Goods';
 

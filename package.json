@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "cross-env REACT_APP_REACT_VERSION=mini DISABLE_NEW_JSX_TRANSFORM=true react-scripts start",
-    "start:17": "cross-env REACT_APP_REACT_VERSION=react17 DISABLE_NEW_JSX_TRANSFORM=true react-scripts start"
+    "start": "cross-env REACT_APP_REACT_VERSION=mini DISABLE_NEW_JSX_TRANSFORM=true react-app-rewired start",
+    "start:17": "cross-env REACT_APP_REACT_VERSION=react17 DISABLE_NEW_JSX_TRANSFORM=true react-app-rewired start"
   },
   "dependencies": {
     "cross-env": "^7.0.3",
     "react": "^18.2.0",
+    "react-app-rewired": "^2.2.1",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1"
   },
