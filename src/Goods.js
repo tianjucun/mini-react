@@ -1,5 +1,4 @@
-import React from './core/react';
-
+import { React } from './core/react-interface';
 class Goods extends React.Component {
   state = {
     color: 'red',
@@ -30,7 +29,22 @@ class Goods extends React.Component {
       count: this.state.count + 1,
     });
   };
+  handleClick2 = () => {
+    this.setState((prevState) => {
+      console.log('prevState: ', prevState);
+      return {
+        count: 2,
+      };
+    });
+    this.setState((prevState) => {
+      console.log('prevState: ', prevState);
+      return {
+        count: 3,
+      };
+    });
+  };
   render() {
+    console.log('render', Date.now());
     return (
       <h1 style={{ color: this.state.color, userSelect: 'none' }}>
         <span>Goods {this.props.name}</span>

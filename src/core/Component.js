@@ -38,6 +38,9 @@ class Updater {
     const { ClassComponentInstance, pendingStates } = this;
     if (pendingStates.length === 0) return;
     const mergedState = this.pendingStates.reduce((prev, curr) => {
+      if (typeof curr === 'function') {
+        curr = curr(prev);
+      }
       return { ...prev, ...curr };
     }, ClassComponentInstance.state);
     this.pendingStates.length = 0;

@@ -1,6 +1,5 @@
-import React from './core/react';
-// import React from 'react';
-import ReactDOM from './core/react-dom';
+import { React, ReactDOM } from './core/react-interface';
+
 import Goods from './Goods';
 
 // ReactDOM.createRoot(document.getElementById('root')).render(

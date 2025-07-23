@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "react-scripts start && SET DISABLE_NEW_JSX_TRANSFORM=true"
+    "start": "cross-env REACT_APP_REACT_VERSION=mini DISABLE_NEW_JSX_TRANSFORM=true react-scripts start",
+    "start:17": "cross-env REACT_APP_REACT_VERSION=react17 DISABLE_NEW_JSX_TRANSFORM=true react-scripts start"
   },
   "dependencies": {
+    "cross-env": "^7.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1"
