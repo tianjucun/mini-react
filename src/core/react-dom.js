@@ -1,3 +1,4 @@
+import { addEvent } from './event';
 import { REACT_ELEMENT_TYPE } from './util';
 
 function render(VNode, containerDOM) {
@@ -124,6 +125,10 @@ function setPropsForDOM(dom, props) {
           dom.style[styleKey] = propValue[styleKey];
         });
       }
+    } else if (/^on[A-Z].*/.test(key)) {
+      // 处理事件
+      const nativeEventName = key.toLowerCase();
+      addEvent(dom, nativeEventName, propValue);
     } else {
       dom.setAttribute(key, propValue);
     }
