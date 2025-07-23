@@ -55,6 +55,8 @@ function createDOM(VNode) {
   // 处理元素的 attribute
   setPropsForDOM(dom, attrs);
 
+  VNode.dom = dom;
+
   return dom;
 }
 
@@ -83,6 +85,7 @@ function getDOMFromClassComponent(VNode) {
   const { type, props } = VNode;
   const instance = new type(props);
   const renderVNode = instance.render();
+  instance.oldVNode = renderVNode;
   if (!renderVNode) {
     return null;
   }
@@ -125,6 +128,19 @@ function setPropsForDOM(dom, props) {
       dom.setAttribute(key, propValue);
     }
   });
+}
+
+export function findDomByVNode(VNode) {
+  if (!VNode) return;
+  if (VNode.dom) return VNode.dom;
+}
+
+export function updateDOMTree(oldDOM, newVNode) {
+  // if (!oldVNode) return;
+  if (!newVNode) return;
+  const parentDOM = oldDOM.parentNode;
+  const newDOM = createDOM(newVNode);
+  parentDOM.replaceChild(newDOM, oldDOM);
 }
 
 const ReactDOM = {

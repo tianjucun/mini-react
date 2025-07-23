@@ -13,8 +13,9 @@ function createElement(type, props, ...children) {
     },
     key,
     ref,
-    _self: __self,
-    _source: __source,
+    // _self: __self,
+    // _source: __source,
+    dom: null,
   };
 }
 

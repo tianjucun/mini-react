@@ -1,7 +1,74 @@
+import { findDomByVNode, updateDOMTree } from './react-dom';
+
+const updaterQueue = {
+  isBatch: false, // 是否支持批量更新
+  updaters: new Set(), // 待更新的组件
+};
+
+export function flushUpdaterQueue() {
+  updaterQueue.isBatch = false;
+  updaterQueue.updaters.forEach((updater) => {
+    updater.launchUpdate();
+  });
+  updaterQueue.updaters.clear();
+}
+
+class Updater {
+  constructor(ClassComponentInstance) {
+    this.pendingStates = [];
+    this.ClassComponentInstance = ClassComponentInstance;
+  }
+
+  addState(partialState) {
+    this.pendingStates.push(partialState);
+
+    // 这里应该是要延迟执行, 才能达到批处理的目的
+    this.preHandleForUpdate();
+  }
+
+  preHandleForUpdate() {
+    if (updaterQueue.isBatch) {
+      updaterQueue.updaters.add(this);
+    } else {
+      this.launchUpdate();
+    }
+  }
+
+  launchUpdate() {
+    const { ClassComponentInstance, pendingStates } = this;
+    if (pendingStates.length === 0) return;
+    const mergedState = this.pendingStates.reduce((prev, curr) => {
+      return { ...prev, ...curr };
+    }, ClassComponentInstance.state);
+    this.pendingStates.length = 0;
+    ClassComponentInstance.state = mergedState;
+    ClassComponentInstance.update();
+  }
+}
+
 class Component {
   static IS_CLASS_COMPONENT = true;
   constructor(props) {
     this.props = props;
+    this.state = {};
+    this.updater = new Updater(this);
+  }
+
+  setState(partialState) {
+    // 1. 兼容批量更新
+    // 2. 执行 update 更新 DOM
+    this.updater.addState(partialState);
+  }
+
+  update() {
+    // 1. 获取旧的虚拟 DOM
+    const oldVNode = this.oldVNode;
+    const oldDOM = findDomByVNode(oldVNode);
+    // 2. 获取新的虚拟 DOM
+    const newVNode = this.render();
+    // 3. 更新真实 DOM
+    updateDOMTree(oldDOM, newVNode);
+    this.oldVNode = newVNode;
   }
 }
 

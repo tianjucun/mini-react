@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start1": "SET DISABLE_NEW_JSX_TRANSFORM=true react-scripts start",
-    "start": "react-scripts start"
+    "start": "react-scripts start && SET DISABLE_NEW_JSX_TRANSFORM=true"
   },
   "dependencies": {
     "react": "^18.2.0",
