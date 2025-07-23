@@ -100,10 +100,10 @@ function getDOMFromClassComponent(VNode) {
  */
 function mountArray(children, dom) {
   for (let child of children) {
-    if (typeof child === 'string') {
-      dom.appendChild(document.createTextNode(child));
-    } else {
+    if (typeof child === 'object' && child.$$typeof === REACT_ELEMENT_TYPE) {
       mount(child, dom);
+    } else {
+      dom.appendChild(document.createTextNode(child));
     }
   }
 }

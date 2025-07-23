@@ -24,7 +24,7 @@ function App(props) {
   );
 }
 
-ReactDOM.render(<Goods msg='hello react' />, document.getElementById('root'));
+ReactDOM.render(<Goods name='苹果' />, document.getElementById('root'));
 
 // console.log(
 //   <h1 id='content' data-name='react' style='color: red'>

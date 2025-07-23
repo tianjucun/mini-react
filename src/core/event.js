@@ -1,3 +1,5 @@
+import { flushUpdaterQueue, updaterQueue } from './Component';
+
 export function addEvent(dom, eventName, handler) {
   // 在源DOM上添加事件映射
   dom.attach = dom.attach || {};
@@ -8,8 +10,37 @@ export function addEvent(dom, eventName, handler) {
 }
 
 function dispatchEvent(nativeEvent) {
+  // 属性更新开启批量更新
+  updaterQueue.isBatch = true;
+
   // 根据 nativeEvent 获取对应的合成事件
   const syntheticEvent = createSyntheticEvent(nativeEvent);
+
+  let target = syntheticEvent.target;
+  while (target) {
+    // 更新 currentTarget
+    target.currentTarget = target;
+
+    // 尝试获取 dom 上的事件并触发
+    const eventName = `on${nativeEvent.type}`;
+    // 如果目标 DOM 上没有通过 React 注册过事件
+    // 对应的 DOM 上将没有 attach 属性
+    const handler = target.attach?.[eventName];
+    if (typeof handler === 'function') {
+      handler(syntheticEvent);
+    }
+
+    // 如果事件冒泡被阻止了, 则直接跳出循环
+    if (syntheticEvent.isPropagationStopped) {
+      break;
+    }
+
+    // 向上冒泡
+    target = target.parentNode;
+  }
+
+  // 批量更新结束, 执行批量更新
+  flushUpdaterQueue();
 }
 
 function createSyntheticEvent(nativeEvent) {

@@ -1,6 +1,6 @@
 import { findDomByVNode, updateDOMTree } from './react-dom';
 
-const updaterQueue = {
+export const updaterQueue = {
   isBatch: false, // 是否支持批量更新
   updaters: new Set(), // 待更新的组件
 };
@@ -50,7 +50,6 @@ class Component {
   static IS_CLASS_COMPONENT = true;
   constructor(props) {
     this.props = props;
-    this.state = {};
     this.updater = new Updater(this);
   }
 

@@ -3,6 +3,7 @@ import React from './core/react';
 class Goods extends React.Component {
   state = {
     color: 'red',
+    count: 0,
   };
   constructor(props) {
     super(props);
@@ -13,8 +14,31 @@ class Goods extends React.Component {
       console.log('change color success by set state', this.state.color);
     }, 1000);
   }
+  handleClick = () => {
+    this.setState({
+      count: 2,
+    });
+    this.setState({
+      count: 3,
+    });
+    this.setState({
+      count: 4,
+    });
+    this.setState({
+      // 这里的 state.count 获取的仍然是改变前的 count
+      // 因为处理事件时，会开启属性的批量更新
+      count: this.state.count + 1,
+    });
+  };
   render() {
-    return <h1 style={{ color: this.state.color }}>Goods {this.props.msg}</h1>;
+    return (
+      <h1 style={{ color: this.state.color, userSelect: 'none' }}>
+        <span>Goods {this.props.name}</span>
+        <span style={{ cursor: 'pointer' }} onClick={this.handleClick}>
+          Count {this.state.count}
+        </span>
+      </h1>
+    );
   }
 }
 
