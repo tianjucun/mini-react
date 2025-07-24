@@ -2,7 +2,7 @@ import { REACT_ELEMENT_TYPE, REACT_FORWARD_REF_TYPE } from './util';
 import Component from './Component';
 
 function createElement(type, props, ...children) {
-  console.log('createElement: ', arguments);
+  // console.log('createElement: ', arguments);
   const { key = null, ref = null, __self, __source, ...elementProps } = props;
   return {
     $$typeof: REACT_ELEMENT_TYPE,

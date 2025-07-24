@@ -1,5 +1,5 @@
 import { React } from '@/react-interface';
-import Goods from './Goods';
+import Goods from '../test-state/Goods';
 
 const { forwardRef } = React;
 const TestForwadRef = forwardRef((props, ref) => {
