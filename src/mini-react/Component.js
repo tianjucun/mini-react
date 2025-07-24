@@ -16,11 +16,13 @@ export function flushUpdaterQueue() {
 class Updater {
   constructor(ClassComponentInstance) {
     this.pendingStates = [];
+    this.pendingCallbacks = [];
     this.ClassComponentInstance = ClassComponentInstance;
   }
 
-  addState(partialState) {
+  addState(partialState, callback) {
     this.pendingStates.push(partialState);
+    this.pendingCallbacks.push(callback);
 
     // 这里应该是要延迟执行, 才能达到批处理的目的
     this.preHandleForUpdate();
@@ -46,6 +48,14 @@ class Updater {
     this.pendingStates.length = 0;
     ClassComponentInstance.state = mergedState;
     ClassComponentInstance.update();
+
+    // 执行回调
+    this.pendingCallbacks.forEach((callback) => {
+      if (typeof callback === 'function') {
+        callback();
+      }
+    });
+    this.pendingCallbacks.length = 0;
   }
 }
 
@@ -56,10 +66,10 @@ class Component {
     this.updater = new Updater(this);
   }
 
-  setState(partialState) {
+  setState(partialState, callback) {
     // 1. 兼容批量更新
     // 2. 执行 update 更新 DOM
-    this.updater.addState(partialState);
+    this.updater.addState(partialState, callback);
   }
 
   update() {
