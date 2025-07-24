@@ -1,5 +1,9 @@
 import { addEvent } from './event';
-import { REACT_ELEMENT_TYPE, REACT_FORWARD_REF_TYPE } from './util';
+import {
+  REACT_ELEMENT_TYPE,
+  REACT_FORWARD_REF_TYPE,
+  REACT_TEXT_TYPE,
+} from './util';
 
 function render(VNode, containerDOM) {
   mount(VNode, containerDOM);
@@ -45,6 +49,13 @@ function createDOM(VNode) {
     return getDOMFromFunctionComponent(VNode);
   }
 
+  // 处理文本节点
+  if (VNode.type === REACT_TEXT_TYPE) {
+    const textDOMNode = document.createTextNode(VNode.props.text);
+    VNode.dom = textDOMNode;
+    return textDOMNode;
+  }
+
   // 1. 根据 type 创建 DOM
   // 2. 处理子元素
   // 3. 处理元素的 attribute
@@ -56,10 +67,6 @@ function createDOM(VNode) {
     mountArray(children, dom);
   } else if (typeof children === 'object') {
     mount(children, dom);
-  } else {
-    // TODO: 其他类型强制转为 string
-    // if (typeof children === 'string')
-    dom.appendChild(document.createTextNode(children));
   }
 
   // 处理元素的 attribute
@@ -142,11 +149,7 @@ function getDOMFromClassComponent(VNode) {
  */
 function mountArray(children, dom) {
   for (let child of children) {
-    if (typeof child === 'object' && child.$$typeof === REACT_ELEMENT_TYPE) {
-      mount(child, dom);
-    } else {
-      dom.appendChild(document.createTextNode(child));
-    }
+    mount(child, dom);
   }
 }
 

@@ -3,6 +3,7 @@ import TestRef from './test-ref/TestRef';
 import TestStateCallback from './test-state/TestStateCallback';
 import Goods from './test-state/Goods';
 import App from './test-element';
+import TestTextElement from './test-element/TestTextElement';
 
 const DEFAULT_DESC = '注意查看控制台的日志输出';
 
@@ -26,6 +27,9 @@ const Components = {
     props: {
       name: '苹果',
     },
+  },
+  'test-text-element': {
+    component: TestTextElement,
   },
 };
 

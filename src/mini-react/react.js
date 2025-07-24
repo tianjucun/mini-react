@@ -1,9 +1,13 @@
-import { REACT_ELEMENT_TYPE, REACT_FORWARD_REF_TYPE } from './util';
+import { REACT_ELEMENT_TYPE, REACT_FORWARD_REF_TYPE, toVNode } from './util';
 import Component from './Component';
 
 function createElement(type, props, ...children) {
   // console.log('createElement: ', arguments);
   const { key = null, ref = null, __self, __source, ...elementProps } = props;
+
+  // 处理特殊节点，比如 text 文本节点
+  children = children.map((child) => toVNode(child));
+
   return {
     $$typeof: REACT_ELEMENT_TYPE,
     type,
