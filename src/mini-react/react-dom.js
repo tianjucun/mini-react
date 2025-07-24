@@ -1,5 +1,5 @@
 import { addEvent } from './event';
-import { REACT_ELEMENT_TYPE } from './util';
+import { REACT_ELEMENT_TYPE, REACT_FORWARD_REF_TYPE } from './util';
 
 function render(VNode, containerDOM) {
   mount(VNode, containerDOM);
@@ -29,6 +29,13 @@ function createDOM(VNode) {
     return null;
   }
 
+  if (
+    typeof VNode.type === 'object' &&
+    VNode.type.$$typeof === REACT_FORWARD_REF_TYPE
+  ) {
+    return getDOMFromForwardRef(VNode);
+  }
+
   if (typeof VNode.type === 'function' && VNode.type.IS_CLASS_COMPONENT) {
     return getDOMFromClassComponent(VNode);
   }
@@ -42,14 +49,16 @@ function createDOM(VNode) {
   // 2. 处理子元素
   // 3. 处理元素的 attribute
 
-  const { type, props } = VNode;
+  const { type, props, ref } = VNode;
   const dom = document.createElement(type);
   const { children, ...attrs } = props;
   if (Array.isArray(children)) {
     mountArray(children, dom);
   } else if (typeof children === 'object') {
     mount(children, dom);
-  } else if (typeof children === 'string') {
+  } else {
+    // TODO: 其他类型强制转为 string
+    // if (typeof children === 'string')
     dom.appendChild(document.createTextNode(children));
   }
 
@@ -58,7 +67,25 @@ function createDOM(VNode) {
 
   VNode.dom = dom;
 
+  // 处理普通元素的 ref
+  if (ref) {
+    ref.current = dom;
+  }
+
   return dom;
+}
+
+function getDOMFromForwardRef(VNode) {
+  const { ref, type, props } = VNode;
+  const { render } = type;
+  if (typeof render !== 'function') {
+    return null;
+  }
+  const renderVNode = render(props, ref);
+  if (!renderVNode) {
+    return null;
+  }
+  return createDOM(renderVNode);
 }
 
 /**
@@ -69,6 +96,7 @@ function createDOM(VNode) {
  * @returns
  */
 function getDOMFromFunctionComponent(VNode) {
+  console.log('getDOMFromFunctionComponent VNode: ', VNode);
   const { type, props } = VNode;
   const renderVNode = type(props);
   if (!renderVNode) {
@@ -83,8 +111,14 @@ function getDOMFromFunctionComponent(VNode) {
  * @returns
  */
 function getDOMFromClassComponent(VNode) {
-  const { type, props } = VNode;
+  const { type, props, ref } = VNode;
   const instance = new type(props);
+
+  // 处理类组件的 ref
+  if (ref) {
+    ref.current = instance;
+  }
+
   const renderVNode = instance.render();
   instance.oldVNode = renderVNode;
   if (!renderVNode) {
