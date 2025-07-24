@@ -68,11 +68,21 @@ function createDOM(VNode) {
   VNode.dom = dom;
 
   // 处理普通元素的 ref
-  if (ref) {
-    ref.current = dom;
-  }
+  updateRef(ref, dom);
 
   return dom;
+}
+
+function updateRef(ref, dom) {
+  // 其他情况会抛出错误
+  // ref 默认是 null, 静默失败
+  if (ref === null) return;
+
+  if (typeof ref === 'function') {
+    ref(dom);
+  } else {
+    ref.current = dom;
+  }
 }
 
 function getDOMFromForwardRef(VNode) {
@@ -115,9 +125,7 @@ function getDOMFromClassComponent(VNode) {
   const instance = new type(props);
 
   // 处理类组件的 ref
-  if (ref) {
-    ref.current = instance;
-  }
+  updateRef(ref, instance);
 
   const renderVNode = instance.render();
   instance.oldVNode = renderVNode;

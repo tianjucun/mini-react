@@ -25,6 +25,7 @@ class TestRef extends React.Component {
     this.ref = React.createRef();
     this.goodsRef = React.createRef();
     this.forwardRef = React.createRef();
+    this.spanEl = null;
 
     this.boxStyle = {
       border: 'solid 1px #ccc',
@@ -42,6 +43,16 @@ class TestRef extends React.Component {
     this.goodsRef.current.setState({
       count: 9999,
     });
+  };
+
+  updateSpanEl = (el) => {
+    console.log('updateSpanEl: ', el);
+    this.spanEl = el;
+  };
+
+  handleClickChangeSpan = () => {
+    console.log('spanEl: ', this.spanEl);
+    this.spanEl.textContent = Number(this.spanEl.textContent) + 1;
   };
 
   render() {
@@ -67,6 +78,14 @@ class TestRef extends React.Component {
           defaultCount={100}
           style={this.boxStyle}
         />
+        <div style={this.boxStyle}>
+          <span>Ref 函数调用测试：</span>
+          <div>
+            <span ref={(el) => this.updateSpanEl(el)}>1</span>
+            &nbsp;&nbsp;
+            <button onClick={this.handleClickChangeSpan}>+1</button>
+          </div>
+        </div>
       </div>
     );
   }
