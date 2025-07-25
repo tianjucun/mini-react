@@ -29,7 +29,7 @@ function mount(VNode, containerDOM) {
  * @returns
  */
 function createDOM(VNode) {
-  if (VNode.$$typeof !== REACT_ELEMENT_TYPE) {
+  if (!VNode || VNode.$$typeof !== REACT_ELEMENT_TYPE) {
     return null;
   }
 
@@ -185,12 +185,55 @@ export function findDomByVNode(VNode) {
   if (VNode.dom) return VNode.dom;
 }
 
-export function updateDOMTree(oldDOM, newVNode) {
+export function updateDOMTree(oldVNode, newVNode) {
   // if (!oldVNode) return;
-  if (!newVNode) return;
-  const parentDOM = oldDOM.parentNode;
-  const newDOM = createDOM(newVNode);
-  parentDOM.replaceChild(newDOM, oldDOM);
+  if (!newVNode || !newVNode) return;
+  const parentDOM = oldVNode.dom.parentNode;
+
+  const DOM_DIFF_TYPE_MAP = {
+    // 新的虚拟DOM和旧的虚拟DOM都不存在，什么也不处理
+    RETURN: !newVNode && !oldVNode,
+    // 新的虚拟DOM存在，旧的虚拟DOM不存在，新增
+    ADD: newVNode && !oldVNode,
+    // 新的虚拟DOM不存在，旧的虚拟DOM存在，删除
+    DELETE: !newVNode && oldVNode,
+    // 新的虚拟DOM存在，旧的虚拟DOM存在，但是节点类型不同, 替换
+    REPLACE: newVNode && oldVNode && newVNode.type !== oldVNode.type,
+    // 新的虚拟DOM存在，旧的虚拟DOM存在，节点类型也相同，比对
+    COMPARE: newVNode && oldVNode && newVNode.type === oldVNode.type,
+  };
+
+  const DIFF_TYPE = Object.keys(DOM_DIFF_TYPE_MAP).find((key) =>
+    Boolean(DOM_DIFF_TYPE_MAP[key])
+  );
+
+  console.log('updateDOMTree DIFF_TYPE: ', DIFF_TYPE, oldVNode, newVNode);
+
+  switch (DIFF_TYPE) {
+    case 'ADD':
+      parentDOM.appendChild(createDOM(newVNode));
+      break;
+    case 'DELETE':
+      const oldDOM = findDomByVNode(oldVNode);
+      oldDOM && oldDOM.remove();
+      break;
+    case 'REPLACE':
+      parentDOM.replaceChild(createDOM(newVNode), oldVNode.dom);
+      break;
+    case 'COMPARE':
+      compare(oldVNode, newVNode);
+      break;
+    case 'RETURN':
+      break;
+    default:
+      return;
+  }
+}
+
+function compare(oldVNode, newVNode) {
+  // TODO: 先做替换
+  const parentDOM = oldVNode.dom.parentNode;
+  parentDOM.replaceChild(createDOM(newVNode), oldVNode.dom);
 }
 
 const ReactDOM = {

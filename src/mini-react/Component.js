@@ -79,7 +79,7 @@ class Component {
     // 2. 获取新的虚拟 DOM
     const newVNode = this.render();
     // 3. 更新真实 DOM
-    updateDOMTree(oldDOM, newVNode);
+    updateDOMTree(oldVNode, newVNode);
     this.oldVNode = newVNode;
   }
 }
