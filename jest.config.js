@@ -10,4 +10,9 @@ module.exports = {
   moduleFileExtensions: ['js', 'jsx', 'json', 'node'],
   // 可选：如果有需要忽略的文件
   testPathIgnorePatterns: ['/node_modules/'],
+  // 配置模块别名
+  moduleNameMapper: {
+    // 示例：将 @ 映射到 src 目录
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
 };

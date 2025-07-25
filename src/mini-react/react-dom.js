@@ -185,11 +185,7 @@ export function findDomByVNode(VNode) {
   if (VNode.dom) return VNode.dom;
 }
 
-export function updateDOMTree(oldVNode, newVNode) {
-  // if (!oldVNode) return;
-  if (!newVNode || !newVNode) return;
-  const parentDOM = oldVNode.dom.parentNode;
-
+export function updateDOMTree(oldVNode, newVNode, oldDOM) {
   const DOM_DIFF_TYPE_MAP = {
     // 新的虚拟DOM和旧的虚拟DOM都不存在，什么也不处理
     RETURN: !newVNode && !oldVNode,
@@ -207,18 +203,21 @@ export function updateDOMTree(oldVNode, newVNode) {
     Boolean(DOM_DIFF_TYPE_MAP[key])
   );
 
+  oldDOM = oldDOM || findDomByVNode(oldVNode);
+
   console.log('updateDOMTree DIFF_TYPE: ', DIFF_TYPE, oldVNode, newVNode);
 
   switch (DIFF_TYPE) {
     case 'ADD':
-      parentDOM.appendChild(createDOM(newVNode));
+      // TODO: 跑通测试，待优化 newVNode._parent
+      const parentNode = oldDOM?.parentNode || newVNode._parent;
+      parentNode.appendChild(createDOM(newVNode));
       break;
     case 'DELETE':
-      const oldDOM = findDomByVNode(oldVNode);
-      oldDOM && oldDOM.remove();
+      oldDOM.remove();
       break;
     case 'REPLACE':
-      parentDOM.replaceChild(createDOM(newVNode), oldVNode.dom);
+      oldDOM.parentNode.replaceChild(createDOM(newVNode), oldVNode.dom);
       break;
     case 'COMPARE':
       compare(oldVNode, newVNode);
@@ -231,6 +230,7 @@ export function updateDOMTree(oldVNode, newVNode) {
 }
 
 function compare(oldVNode, newVNode) {
+  if (!oldVNode || !newVNode) return;
   // TODO: 先做替换
   const parentDOM = oldVNode.dom.parentNode;
   parentDOM.replaceChild(createDOM(newVNode), oldVNode.dom);
