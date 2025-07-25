@@ -5,10 +5,13 @@
   "main": "index.js",
   "scripts": {
     "start": "cross-env REACT_APP_REACT_VERSION=mini DISABLE_NEW_JSX_TRANSFORM=true react-app-rewired start",
-    "start:17": "cross-env REACT_APP_REACT_VERSION=react17 DISABLE_NEW_JSX_TRANSFORM=true react-app-rewired start"
+    "start:17": "cross-env REACT_APP_REACT_VERSION=react17 DISABLE_NEW_JSX_TRANSFORM=true react-app-rewired start",
+    "test": "jest"
   },
   "dependencies": {
     "cross-env": "^7.0.3",
+    "jest": "^30.0.5",
+    "jsdom": "^26.1.0",
     "react": "^18.2.0",
     "react-app-rewired": "^2.2.1",
     "react-dom": "^18.2.0",
@@ -28,5 +31,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "babel-jest": "^30.0.5",
+    "jest-environment-jsdom": "29.7.0"
   }
 }
