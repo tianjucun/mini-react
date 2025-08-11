@@ -14,3 +14,12 @@ export function toVNode(VNode) {
   }
   return VNode;
 }
+
+export const isClassComponent = (type) =>
+  typeof type === 'function' && type.IS_CLASS_COMPONENT;
+export const isFunctionComponent = (type) =>
+  !isClassComponent(type) && typeof type === 'function';
+export const isForwardRefComponent = (type) =>
+  type.$$typeof === REACT_FORWARD_REF_TYPE;
+export const isTextComponent = (type) => type === REACT_TEXT_TYPE;
+export const isDOMComponent = (type) => typeof type === 'string';

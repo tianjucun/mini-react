@@ -36,7 +36,7 @@ class Updater {
     }
   }
 
-  launchUpdate() {
+  launchUpdate(nextProps) {
     const { ClassComponentInstance, pendingStates } = this;
     if (pendingStates.length === 0) return;
     const mergedState = this.pendingStates.reduce((prev, curr) => {
@@ -46,6 +46,10 @@ class Updater {
       return { ...prev, ...curr };
     }, ClassComponentInstance.state);
     this.pendingStates.length = 0;
+
+    if (nextProps) {
+      ClassComponentInstance.props = nextProps;
+    }
     ClassComponentInstance.state = mergedState;
     ClassComponentInstance.update();
 
