@@ -1,4 +1,10 @@
-import { REACT_ELEMENT_TYPE, REACT_FORWARD_REF_TYPE, toVNode } from './util';
+import {
+  filterChildrenProps,
+  REACT_ELEMENT_TYPE,
+  REACT_FORWARD_REF_TYPE,
+  shallowEqual,
+  toVNode,
+} from './util';
 import Component from './Component';
 
 function createElement(type, props, ...children) {
@@ -55,9 +61,20 @@ function forwardRef(render) {
   };
 }
 
+class PureComponent extends Component {
+  shouldComponentUpdate(nextProps, nextSate) {
+    return (
+      // TODO: 待优化 filterChildrenProps
+      !shallowEqual(filterChildrenProps(this.props), nextProps) ||
+      !shallowEqual(this.state, nextSate)
+    );
+  }
+}
+
 export default {
   createElement,
   Component,
   createRef,
   forwardRef,
+  PureComponent,
 };

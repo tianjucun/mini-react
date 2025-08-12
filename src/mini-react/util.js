@@ -24,6 +24,19 @@ export const isForwardRefComponent = (type) =>
 export const isTextComponent = (type) => type === REACT_TEXT_TYPE;
 export const isDOMComponent = (type) => typeof type === 'string';
 
+// export const filterChildrenProps = (props) =>
+//   Object.keys(props)
+//     .filter((key) => key !== 'children')
+//     .reduce((obj, key) => {
+//       obj[key] = props[key];
+//       return obj;
+//     }, {});
+
+export const filterChildrenProps = (props) =>
+  Object.fromEntries(
+    Object.entries(props).filter(([key]) => key !== 'children')
+  );
+
 const typeMap = {
   '[object Object]': 'object',
   '[object Array]': 'array',
@@ -130,4 +143,35 @@ export function deepClone(obj, weakMap = new WeakMap()) {
   });
 
   return cloneObj;
+}
+
+// 参考 React 官方实现
+export function shallowEqual(o1, o2) {
+  if (Object.is(o1, o2)) {
+    return true;
+  }
+
+  if (
+    typeof o1 !== 'object' ||
+    o1 === null ||
+    typeof o2 !== 'object' ||
+    o2 === null
+  ) {
+    return false;
+  }
+
+  const o1Keys = Object.keys(o1);
+  const o2Keys = Object.keys(o2);
+  if (o1Keys.length !== o2Keys.length) {
+    return false;
+  }
+
+  for (let i = 0; i < o1Keys.length; i++) {
+    const key = o1Keys[i];
+    if (!o2.hasOwnProperty(key) || !Object.is(o1[key], o2[key])) {
+      return false;
+    }
+  }
+
+  return true;
 }

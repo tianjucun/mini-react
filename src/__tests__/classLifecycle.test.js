@@ -1,4 +1,4 @@
-import ReactDOM, { updateDOMTree } from '../mini-react/react-dom';
+import ReactDOM from '../mini-react/react-dom';
 import React from '../mini-react/react';
 import { toVNode } from '../mini-react/util';
 
@@ -9,7 +9,7 @@ function setupParentWithChild(childVNode) {
   return parent;
 }
 
-describe('updateDOMTree', () => {
+describe('classLifecycle', () => {
   beforeEach(() => {
     // 每个测试前重置文档
     document.body.innerHTML = '';

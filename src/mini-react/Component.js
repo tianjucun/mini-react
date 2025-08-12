@@ -1,5 +1,5 @@
 import { findDomByVNode, updateDOMTree } from './react-dom';
-import { deepClone } from './util';
+import { deepClone, filterChildrenProps } from './util';
 
 export const updaterQueue = {
   isBatch: false, // 是否支持批量更新
@@ -45,8 +45,8 @@ class Updater {
 
     const { ClassComponentInstance, pendingStates } = this;
     const prevProps = deepClone(ClassComponentInstance.props);
-
     const prevState = deepClone(ClassComponentInstance.state);
+    const nextPropsWithoutChildren = filterChildrenProps(nextProps);
     let isShouldUpdate = true;
 
     // 计算新的 state
@@ -64,12 +64,20 @@ class Updater {
     if (ClassComponentInstance.constructor.getDerivedStateFromProps) {
       let direvedState =
         ClassComponentInstance.constructor.getDerivedStateFromProps(
-          nextProps,
+          nextPropsWithoutChildren,
           prevState
         );
       if (direvedState) {
         nextState = { ...nextState, ...direvedState };
       }
+    }
+
+    // 处理生命周期函数: shouldComponentUpdate
+    if (ClassComponentInstance.shouldComponentUpdate) {
+      isShouldUpdate = ClassComponentInstance.shouldComponentUpdate(
+        nextPropsWithoutChildren,
+        nextState
+      );
     }
 
     // update props
@@ -80,17 +88,9 @@ class Updater {
     // update state
     ClassComponentInstance.state = nextState;
 
-    // 处理生命周期函数: shouldComponentUpdate
-    if (ClassComponentInstance.shouldComponentUpdate) {
-      isShouldUpdate = ClassComponentInstance.shouldComponentUpdate(
-        nextProps,
-        nextState
-      );
-    }
-
     // handle update
     if (isShouldUpdate) {
-      ClassComponentInstance.update(prevProps, prevState);
+      ClassComponentInstance.update(filterChildrenProps(prevProps), prevState);
     }
 
     // 执行回调
