@@ -1,4 +1,4 @@
-import { React } from '@/react-interface';
+import React from 'react';
 
 function TestTextElement() {
   return <span>Hello Mini React</span>;

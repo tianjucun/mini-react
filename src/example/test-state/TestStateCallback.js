@@ -1,5 +1,4 @@
-import { React } from '@/react-interface';
-
+import React from 'react';
 class TestStateCallback extends React.Component {
   state = { count: 0 };
 

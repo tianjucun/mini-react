@@ -1,4 +1,4 @@
-import { React } from '@/react-interface';
+import React from 'react';
 import TestRef from './test-ref/TestRef';
 import TestStateCallback from './test-state/TestStateCallback';
 import Goods from './test-state/Goods';

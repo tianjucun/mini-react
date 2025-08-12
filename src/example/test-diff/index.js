@@ -1,4 +1,4 @@
-import { React } from '@/react-interface';
+import React from 'react';
 
 class TestNormalDiff extends React.Component {
   state = {

@@ -1,6 +1,4 @@
-import { React } from '@/react-interface';
-
-console.log('reactInterface', React);
+import React from 'react';
 class Goods extends React.Component {
   state = {
     color: 'red',
