@@ -1,4 +1,5 @@
 import { findDomByVNode, updateDOMTree } from './react-dom';
+import { deepClone } from './util';
 
 export const updaterQueue = {
   isBatch: false, // 是否支持批量更新
@@ -43,8 +44,9 @@ class Updater {
     }
 
     const { ClassComponentInstance, pendingStates } = this;
-    const prevProps = ClassComponentInstance.props;
-    const prevState = ClassComponentInstance.state;
+    const prevProps = deepClone(ClassComponentInstance.props);
+
+    const prevState = deepClone(ClassComponentInstance.state);
     let isShouldUpdate = true;
 
     // 计算新的 state
@@ -59,9 +61,9 @@ class Updater {
 
     // TODO: 目前只会在更新的时候调用 getDerivedStateFromProps
     // 处理生命周期函数: getDerivedStateFromProps
-    if (this.ClassComponentInstance.constructor.getDerivedStateFromProps) {
+    if (ClassComponentInstance.constructor.getDerivedStateFromProps) {
       let direvedState =
-        this.ClassComponentInstance.constructor.getDerivedStateFromProps(
+        ClassComponentInstance.constructor.getDerivedStateFromProps(
           nextProps,
           prevState
         );
@@ -122,13 +124,22 @@ class Component {
     const oldDOM = findDomByVNode(oldVNode);
     // 2. 获取新的虚拟 DOM
     const newVNode = this.render();
+
+    // TODO: getSnapshotBeforeUpdate 目前是在 render 之后调用的
+    // 在 render 之后、DOM 更新之前执行（介于 “计算出变更” 和 “实际更新 DOM” 之间）。
+    // 处理 snapshot
+    let snapshot = null;
+    if (this.getSnapshotBeforeUpdate) {
+      snapshot = this.getSnapshotBeforeUpdate(prevProps, prevState);
+    }
+
     // 3. 更新真实 DOM
     updateDOMTree(oldVNode, newVNode);
     this.oldVNode = newVNode;
 
     // 实现类组件的更新生命周期
     if (this.componentDidUpdate) {
-      this.componentDidUpdate(prevProps, prevState);
+      this.componentDidUpdate(prevProps, prevState, snapshot);
     }
   }
 }

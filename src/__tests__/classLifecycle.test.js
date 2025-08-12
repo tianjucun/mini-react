@@ -259,4 +259,38 @@ describe('updateDOMTree', () => {
     });
     expect(div.textContent).toBe('1');
   });
+
+  test('should call getSnapshotBeforeUpdate', () => {
+    const test = jest.fn();
+    // 模拟类组件
+    class TestComponent extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          count: 0,
+        };
+        setTimeout(() => {
+          this.setState({
+            count: 1,
+          });
+        }, 1);
+      }
+      getSnapshotBeforeUpdate(prevProps, prevState) {
+        return 'Snapshot';
+      }
+
+      componentDidUpdate(prevProps, prevState, snapshot) {
+        test(snapshot);
+      }
+
+      render() {
+        return React.createElement('div', { id: 'new' }, this.state.count);
+      }
+    }
+
+    const vNode = toVNode(React.createElement(TestComponent));
+    const parent = setupParentWithChild(vNode);
+    jest.advanceTimersByTime(1);
+    expect(test).toHaveBeenCalledWith('Snapshot');
+  });
 });

@@ -5,6 +5,7 @@ import Goods from './test-state/Goods';
 import App from './test-element';
 import TestTextElement from './test-element/TestTextElement';
 import TestNormalDiff from './test-diff';
+import ScrollingList from './test-snapshot';
 
 const DEFAULT_DESC = '注意查看控制台的日志输出';
 
@@ -34,6 +35,9 @@ const Components = {
   },
   'test-normal-diff': {
     component: TestNormalDiff,
+  },
+  'test-snapshot': {
+    component: ScrollingList,
   },
 };
 
