@@ -162,4 +162,56 @@ describe('updateDOMTree', () => {
     expect(TestComponent.isCalled).toBe(true);
     expect(parent.querySelector('#new')).toBeNull();
   });
+
+  test('should call shouldComponentUpdate', () => {
+    const test = jest.fn();
+    const test2 = jest.fn();
+
+    // 模拟类组件
+    class TestComponent extends React.Component {
+      static isShouldUpdate = false;
+      static testInstance = null;
+      constructor(props) {
+        super(props);
+        TestComponent.testInstance = this;
+      }
+      shouldComponentUpdate() {
+        test('shouldComponentUpdate');
+        return TestComponent.isShouldUpdate;
+      }
+      componentDidUpdate() {
+        test2('componentDidUpdate');
+      }
+      render() {
+        return React.createElement('div', { id: 'new' }, this.props.count);
+      }
+    }
+    class ParentComponent extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          count: 0,
+        };
+        setTimeout(() => {
+          this.setState({
+            count: 1,
+          });
+        }, 1);
+      }
+      render() {
+        return <TestComponent count={this.state.count} />;
+      }
+    }
+
+    const vNode = toVNode(React.createElement(ParentComponent));
+    const parent = setupParentWithChild(vNode);
+    jest.advanceTimersByTime(1);
+    expect(test).toHaveBeenCalledWith('shouldComponentUpdate');
+    expect(test2).not.toHaveBeenCalledWith('componentDidUpdate');
+    TestComponent.isShouldUpdate = true;
+    TestComponent.testInstance.setState({
+      count: 2,
+    });
+    expect(test2).toHaveBeenCalledWith('componentDidUpdate');
+  });
 });

@@ -37,23 +37,45 @@ class Updater {
   }
 
   launchUpdate(nextProps) {
+    if (this.pendingStates.length === 0 && !nextProps) {
+      return;
+    }
+
     const { ClassComponentInstance, pendingStates } = this;
-    const prevProps = { ...ClassComponentInstance.props };
-    const prevState = { ...ClassComponentInstance.state };
-    if (pendingStates.length === 0) return;
-    const mergedState = this.pendingStates.reduce((prev, curr) => {
+    const prevProps = ClassComponentInstance.props;
+    const prevState = ClassComponentInstance.state;
+    let isShouldUpdate = true;
+
+    // 计算新的 state
+    const nextState = pendingStates.reduce((prev, curr) => {
       if (typeof curr === 'function') {
         curr = curr(prev);
       }
       return { ...prev, ...curr };
     }, ClassComponentInstance.state);
-    this.pendingStates.length = 0;
 
+    pendingStates.length = 0;
+
+    // update props
     if (nextProps) {
       ClassComponentInstance.props = nextProps;
     }
-    ClassComponentInstance.state = mergedState;
-    ClassComponentInstance.update(prevProps, prevState);
+
+    // update state
+    ClassComponentInstance.state = nextState;
+
+    // 处理生命周期函数: shouldComponentUpdate
+    if (ClassComponentInstance.shouldComponentUpdate) {
+      isShouldUpdate = ClassComponentInstance.shouldComponentUpdate(
+        nextProps,
+        nextState
+      );
+    }
+
+    // handle update
+    if (isShouldUpdate) {
+      ClassComponentInstance.update(prevProps, prevState);
+    }
 
     // 执行回调
     this.pendingCallbacks.forEach((callback) => {
@@ -61,6 +83,7 @@ class Updater {
         callback();
       }
     });
+
     this.pendingCallbacks.length = 0;
   }
 }

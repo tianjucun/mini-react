@@ -355,9 +355,10 @@ function updateClassComponent(oldVNode, newVNode) {
   // 通过 oldVNode 获取到旧的类组件实例
   // 然后根据新的 props 更新类组件实例
   const classInstance = (newVNode.classInstance = oldVNode.classInstance);
-  // classInstance.updater.launchUpdate(newVNode.props);
-  classInstance.props = newVNode.props;
-  classInstance.update();
+  // state 可能没有变更, 可能是 props 发生了变更
+  // 所以需要将新的 props 也传递进去
+  classInstance.updater.launchUpdate(newVNode.props);
+  // classInstance.update();
 }
 
 function updateChildren(oldVNodeChildren, newVNodeChildren, parentDOM) {
