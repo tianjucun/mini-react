@@ -148,7 +148,16 @@ function getDOMFromClassComponent(VNode) {
   if (!renderVNode) {
     return null;
   }
-  return createDOM(renderVNode);
+  const dom = createDOM(renderVNode);
+
+  VNode.dom = dom;
+
+  // TODO: 类组件的挂载生命周期,
+  // 目前是在虚拟DOM转换为真实DOM后调用的, 并不是在对应的真实DOM挂载完成后调用的
+  if (instance?.componentDidMount) {
+    instance.componentDidMount();
+  }
+  return dom;
 }
 
 /**
@@ -196,6 +205,34 @@ export function findDomByVNode(VNode) {
   if (VNode.dom) return VNode.dom;
 }
 
+export function removeDOM(oldVNode) {
+  const dom = findDomByVNode(oldVNode);
+  if (dom) {
+    // TODO: 待优化递归调用
+    // 生命周期调用顺序: 子节点的 componentWillUnmount -> 父节点的 componentWillUnmount
+    // 处理 oldVNode 以及 oldVNode 下所有的孩子节点的生命周期调用
+    if (oldVNode.props.children) {
+      const children = Array.isArray(oldVNode.props.children)
+        ? oldVNode.props.children
+        : [oldVNode.props.children];
+      children.forEach((child) => {
+        removeDOM(child);
+      });
+    }
+
+    // 检查是否有对应的类组件实例
+    if (oldVNode.classInstance?.componentWillUnmount) {
+      // 调用类组件的 componentWillUnmount 方法
+      oldVNode.classInstance.componentWillUnmount();
+    }
+
+    dom.remove();
+
+    // 清空旧的虚拟DOM的引用
+    oldVNode.dom = null;
+  }
+}
+
 export function updateDOMTree(oldVNode, newVNode, oldDOM) {
   const DOM_DIFF_TYPE_MAP = {
     // 新的虚拟DOM和旧的虚拟DOM都不存在，什么也不处理
@@ -225,7 +262,7 @@ export function updateDOMTree(oldVNode, newVNode, oldDOM) {
       parentNode.appendChild(createDOM(newVNode));
       break;
     case 'DELETE':
-      oldDOM.remove();
+      removeDOM(oldVNode);
       break;
     case 'REPLACE':
       oldDOM.parentNode.replaceChild(createDOM(newVNode), oldVNode.dom);
@@ -349,10 +386,7 @@ function updateChildren(oldVNodeChildren, newVNodeChildren, parentDOM) {
   // 老的子节点有, 新的子节点没有, 删除
   if (oldVNodeChildren.length && !newVNodeChildren.length) {
     oldVNodeChildren.forEach((oldVNode) => {
-      const childDOM = findDomByVNode(oldVNode);
-      if (childDOM) {
-        childDOM.remove();
-      }
+      removeDOM(oldVNode);
     });
     return;
   }
@@ -416,7 +450,13 @@ function updateChildren(oldVNodeChildren, newVNodeChildren, parentDOM) {
   const moveToVNode = actions
     .filter((action) => action.type === 'MOVE')
     .map((action) => action.oldVNode);
-  [...deleteToVNode, ...moveToVNode].forEach((oldVNode) => {
+  const deleteToNodeLength = deleteToVNode.length;
+  [...deleteToVNode, ...moveToVNode].forEach((oldVNode, index) => {
+    if (index < deleteToNodeLength) {
+      removeDOM(oldVNode);
+      return;
+    }
+
     const oldDOM = findDomByVNode(oldVNode);
     if (oldDOM) {
       oldDOM.remove();

@@ -38,6 +38,8 @@ class Updater {
 
   launchUpdate(nextProps) {
     const { ClassComponentInstance, pendingStates } = this;
+    const prevProps = { ...ClassComponentInstance.props };
+    const prevState = { ...ClassComponentInstance.state };
     if (pendingStates.length === 0) return;
     const mergedState = this.pendingStates.reduce((prev, curr) => {
       if (typeof curr === 'function') {
@@ -51,7 +53,7 @@ class Updater {
       ClassComponentInstance.props = nextProps;
     }
     ClassComponentInstance.state = mergedState;
-    ClassComponentInstance.update();
+    ClassComponentInstance.update(prevProps, prevState);
 
     // 执行回调
     this.pendingCallbacks.forEach((callback) => {
@@ -76,7 +78,7 @@ class Component {
     this.updater.addState(partialState, callback);
   }
 
-  update() {
+  update(prevProps, prevState) {
     // 1. 获取旧的虚拟 DOM
     const oldVNode = this.oldVNode;
     const oldDOM = findDomByVNode(oldVNode);
@@ -85,6 +87,11 @@ class Component {
     // 3. 更新真实 DOM
     updateDOMTree(oldVNode, newVNode);
     this.oldVNode = newVNode;
+
+    // 实现类组件的更新生命周期
+    if (this.componentDidUpdate) {
+      this.componentDidUpdate(prevProps, prevState);
+    }
   }
 }
 
