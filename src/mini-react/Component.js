@@ -36,7 +36,8 @@ class Updater {
     }
   }
 
-  launchUpdate(nextProps) {
+  // TODO: 待处理 nextProps 的默认值
+  launchUpdate(nextProps = this.ClassComponentInstance.props) {
     if (this.pendingStates.length === 0 && !nextProps) {
       return;
     }
@@ -47,7 +48,7 @@ class Updater {
     let isShouldUpdate = true;
 
     // 计算新的 state
-    const nextState = pendingStates.reduce((prev, curr) => {
+    let nextState = pendingStates.reduce((prev, curr) => {
       if (typeof curr === 'function') {
         curr = curr(prev);
       }
@@ -55,6 +56,19 @@ class Updater {
     }, ClassComponentInstance.state);
 
     pendingStates.length = 0;
+
+    // TODO: 目前只会在更新的时候调用 getDerivedStateFromProps
+    // 处理生命周期函数: getDerivedStateFromProps
+    if (this.ClassComponentInstance.constructor.getDerivedStateFromProps) {
+      let direvedState =
+        this.ClassComponentInstance.constructor.getDerivedStateFromProps(
+          nextProps,
+          prevState
+        );
+      if (direvedState) {
+        nextState = { ...nextState, ...direvedState };
+      }
+    }
 
     // update props
     if (nextProps) {
@@ -101,6 +115,7 @@ class Component {
     this.updater.addState(partialState, callback);
   }
 
+  // TODO: 待处理 forceUpdate 的特性
   update(prevProps, prevState) {
     // 1. 获取旧的虚拟 DOM
     const oldVNode = this.oldVNode;

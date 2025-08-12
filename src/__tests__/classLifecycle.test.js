@@ -214,4 +214,49 @@ describe('updateDOMTree', () => {
     });
     expect(test2).toHaveBeenCalledWith('componentDidUpdate');
   });
+
+  test('should call getDerivedStateFromProps', () => {
+    const test = jest.fn();
+    // 模拟类组件
+    class TestComponent extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          count: 0,
+        };
+      }
+      static getDerivedStateFromProps(nextProps, state) {
+        return {
+          count: nextProps.count === 10 ? 1 : nextProps.count,
+        };
+      }
+      render() {
+        return React.createElement('div', { id: 'new' }, this.state.count);
+      }
+    }
+
+    class ParentComponent extends React.Component {
+      static testInstance = null;
+      constructor(props) {
+        super(props);
+        ParentComponent.testInstance = this;
+        this.state = {
+          count: 2,
+        };
+      }
+      render() {
+        return <TestComponent count={this.state.count} />;
+      }
+    }
+
+    const vNode = toVNode(React.createElement(ParentComponent));
+    const parent = setupParentWithChild(vNode);
+    const div = parent.querySelector('#new');
+    // TODO: 目前不支持 render 前调用
+    expect(div.textContent).toBe('0');
+    ParentComponent.testInstance.setState({
+      count: 10,
+    });
+    expect(div.textContent).toBe('1');
+  });
 });
