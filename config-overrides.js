@@ -1,20 +1,42 @@
 const path = require('path');
 
+const resolvePath = (config) =>
+  Object.fromEntries(
+    Object.entries(config).map(([key, value]) => [
+      key,
+      path.resolve(__dirname, value),
+    ])
+  );
+
+const miniReactPathAliasConfig = resolvePath({
+  react: 'src/packages/react',
+  'react-dom': 'src/packages/react-dom',
+  'react-dom-bindings': 'src/packages/react-dom-bindings',
+  'react-reconciler': 'src/packages/react-reconciler',
+  scheduler: 'src/packages/scheduler',
+  shared: 'src/packages/shared',
+});
+
+const reactPathAliasConfig = {
+  react: 'react',
+  'react-dom': 'react-dom',
+  'react-dom-bindings': 'react-dom-bindings',
+  'react-reconciler': 'react-reconciler',
+  scheduler: 'scheduler',
+  shared: 'shared',
+};
+
+const reactVersion = process.env.REACT_APP_REACT_VERSION;
+
+const RealReactPathAlias =
+  reactVersion === 'react18' ? reactPathAliasConfig : miniReactPathAliasConfig;
+
 module.exports = function override(config, env) {
   // 配置别名
   config.resolve.alias = {
     ...config.resolve.alias,
     '@': path.resolve(__dirname, 'src'), // 配置 @ 指向 src 目录
-    // 根据环境变量设置React别名
-    react:
-      process.env.REACT_APP_REACT_VERSION === 'react17'
-        ? 'react'
-        : path.resolve(__dirname, 'src/mini-react/react.js'),
-
-    'react-dom':
-      process.env.REACT_APP_REACT_VERSION === 'react17'
-        ? 'react-dom'
-        : path.resolve(__dirname, 'src/mini-react/react-dom.js'),
+    ...RealReactPathAlias, // 配置 react 相关的别名
   };
   return config;
 };

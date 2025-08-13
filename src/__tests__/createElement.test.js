@@ -1,5 +1,6 @@
-import React from '../mini-react/react';
-import { REACT_ELEMENT_TYPE, REACT_FORWARD_REF_TYPE } from '../mini-react/util';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { REACT_ELEMENT_TYPE, REACT_FORWARD_REF_TYPE } from '../packages/util';
 
 describe('createElement', () => {
   it('should create an element with the correct structure', () => {

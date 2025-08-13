@@ -1,6 +1,6 @@
-import ReactDOM, { updateDOMTree } from '../mini-react/react-dom';
-import React from '../mini-react/react';
-import { toVNode } from '../mini-react/util';
+import ReactDOM, { updateDOMTree } from 'react-dom';
+import React from 'react';
+import { toVNode } from '../packages/util';
 
 // 辅助函数：创建父节点并添加子节点
 function setupParentWithChild(childVNode) {
