@@ -48,6 +48,23 @@ export function useEffect(effect, deps) {
   ) {
     // 异步执行
     setTimeout(() => {
+      // TODO: 假如 deps 是一个空数组, 应该在组件卸载时调用 destructor 函数
+      destructor && destructor();
+      states[currentIndex] = [effect(), deps];
+    });
+  }
+  hookIndex++;
+}
+
+export function useLayoutEffect(effect, deps) {
+  const currentIndex = hookIndex;
+  const [destructor, oldDeps] = states[hookIndex] || [null, null];
+  if (
+    !states[hookIndex] ||
+    deps.some((item, index) => !Object.is(item, oldDeps[index]))
+  ) {
+    // 异步执行
+    queueMicrotask(() => {
       destructor && destructor();
       states[currentIndex] = [effect(), deps];
     });
