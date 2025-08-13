@@ -1,4 +1,4 @@
-import React, { useReducer, useState } from 'react';
+import React, { useEffect, useReducer, useState } from 'react';
 
 function incrementAnimalCountReducer(state, action) {
   switch (action.type) {
@@ -21,9 +21,11 @@ function TestHooks() {
     rabbitCount: 0,
   });
 
-  // useEffect(() => {
-  //   setCount(1);
-  // }, []);
+  useEffect(() => {
+    setCount(100);
+  }, []);
+
+  useEffect;
 
   const handleClick = () => {
     setCount(count + 2);

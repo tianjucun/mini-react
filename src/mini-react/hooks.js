@@ -31,3 +31,26 @@ export function useReducer(reducer, initialState) {
   }
   return [state, dispatch];
 }
+
+// deps 依赖项必须是响应式的 state 状态
+// 这样当 state 发生变化时, 会重新执行 useEffect,
+// 可以通过 deps 和 闭包中的 oldDeps 比对, 来判断是否需要调用 effect 函数
+export function useEffect(effect, deps) {
+  // destructor
+  // deps 改变需要调用 effect 函数
+  // 需要比对老的 deps 和 新的 deps
+
+  const currentIndex = hookIndex;
+  const [destructor, oldDeps] = states[hookIndex] || [null, null];
+  if (
+    !states[hookIndex] ||
+    deps.some((item, index) => !Object.is(item, oldDeps[index]))
+  ) {
+    // 异步执行
+    setTimeout(() => {
+      destructor && destructor();
+      states[currentIndex] = [effect(), deps];
+    });
+  }
+  hookIndex++;
+}
