@@ -6,6 +6,7 @@ import App from './test-element';
 import TestTextElement from './test-element/TestTextElement';
 import TestNormalDiff from './test-diff';
 import ScrollingList from './test-snapshot';
+import TestHooks from './test-hooks';
 
 const DEFAULT_DESC = '注意查看控制台的日志输出';
 
@@ -38,6 +39,9 @@ const Components = {
   },
   'test-snapshot': {
     component: ScrollingList,
+  },
+  'test-hooks': {
+    component: TestHooks,
   },
 };
 

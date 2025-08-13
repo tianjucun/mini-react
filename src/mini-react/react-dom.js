@@ -1,4 +1,5 @@
 import { addEvent } from './event';
+import { resetHookIndex } from './hooks';
 import {
   isClassComponent,
   isForwardRefComponent,
@@ -8,8 +9,14 @@ import {
   isDOMComponent,
 } from './util';
 
+export let emitUpdateForHooks;
+
 function render(VNode, containerDOM) {
   mount(VNode, containerDOM);
+  emitUpdateForHooks = () => {
+    resetHookIndex();
+    updateDOMTree(VNode, VNode, findDomByVNode(VNode));
+  };
 }
 
 function mount(VNode, containerDOM) {

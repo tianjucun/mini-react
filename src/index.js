@@ -5,6 +5,6 @@ import Example from '@/example';
 import './version';
 
 ReactDOM.render(
-  <Example componentName='test-snapshot' />,
+  <Example componentName='test-hooks' />,
   document.getElementById('root')
 );
