@@ -18,3 +18,16 @@ export function useState(initialState) {
   }
   return [states[hookIndex++], setState];
 }
+
+// useReducer 会根据 dispatch 函数的调用
+// 自动调用 reducer 函数计算新的 state, 并更新 state
+export function useReducer(reducer, initialState) {
+  // 基于 useState 实现 useReducer
+  const [state, setState] = useState(initialState);
+  function dispatch(action) {
+    // 通过 reducer 计算新的 state
+    const newState = reducer(state, action);
+    setState(newState);
+  }
+  return [state, dispatch];
+}
