@@ -4,6 +4,7 @@ import React, {
   useState,
   useLayoutEffect,
   useRef,
+  useImperativeHandle,
 } from 'react';
 
 function incrementAnimalCountReducer(state, action) {
@@ -19,6 +20,27 @@ function incrementAnimalCountReducer(state, action) {
   }
 }
 
+const Data = React.forwardRef((props, ref) => {
+  const [data, setData] = useState([1, 2, 3, 4, 5]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      getData() {
+        return data;
+      },
+      updateData(newData) {
+        setData(newData);
+      },
+    }),
+    [data, setData]
+  );
+  return (
+    <div>
+      <div>数据：{data.join(',')}</div>
+    </div>
+  );
+});
+
 function TestHooks() {
   const [count, setCount] = useState(0);
   const [animalCount, dispatch] = useReducer(incrementAnimalCountReducer, {
@@ -27,6 +49,8 @@ function TestHooks() {
     rabbitCount: 0,
   });
   const boxRef = useRef(null);
+  const dataRef = useRef(null);
+
   useEffect(() => {
     setCount(100);
   }, []);
@@ -81,6 +105,17 @@ function TestHooks() {
       <div>{renderAnimalCount()}</div>
       <div ref={boxRef} id='box'>
         Box
+      </div>
+      <div>
+        <Data ref={dataRef} />
+        <button onClick={() => console.log(dataRef.current.getData())}>
+          点击打印数据
+        </button>
+        <button
+          onClick={() => dataRef.current.updateData([100, 200, 300, 400, 500])}
+        >
+          设置数据为：[100, 200, 300, 400, 500]
+        </button>
       </div>
     </div>
   );

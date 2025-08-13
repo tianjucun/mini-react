@@ -76,3 +76,15 @@ export function useRef(initialValue) {
   states[hookIndex] = states[hookIndex] || { current: initialValue };
   return states[hookIndex++];
 }
+
+export function useImperativeHandle(ref, init, deps) {
+  const [oldDeps] = states[hookIndex] || [null];
+  if (
+    !states[hookIndex] ||
+    deps.some((item, index) => !Object.is(item, oldDeps[index]))
+  ) {
+    ref.current = init();
+    states[hookIndex] = [deps];
+  }
+  hookIndex++;
+}
