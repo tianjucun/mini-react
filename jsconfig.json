@@ -1,48 +1,51 @@
 {
   "compilerOptions": {
-    "baseUrl": "src",
+    "baseUrl": ".",
     "paths": {
       "react": [
-        "packages/react"
+        "src/packages/react"
       ],
       "react/*": [
-        "packages/react/*"
+        "src/packages/react/*"
       ],
       "react-dom": [
-        "packages/react-dom"
+        "src/packages/react-dom"
       ],
       "react-dom/*": [
-        "packages/react-dom/*"
+        "src/packages/react-dom/*"
       ],
       "react-dom-bindings": [
-        "packages/react-dom-bindings"
+        "src/packages/react-dom-bindings"
       ],
       "react-dom-bindings/*": [
-        "packages/react-dom-bindings/*"
+        "src/packages/react-dom-bindings/*"
       ],
       "react-reconciler": [
-        "packages/react-reconciler"
+        "src/packages/react-reconciler"
       ],
       "react-reconciler/*": [
-        "packages/react-reconciler/*"
+        "src/packages/react-reconciler/*"
       ],
       "scheduler": [
-        "packages/scheduler"
+        "src/packages/scheduler"
       ],
       "scheduler/*": [
-        "packages/scheduler/*"
+        "src/packages/scheduler/*"
       ],
       "shared": [
-        "packages/shared"
+        "src/packages/shared"
       ],
       "shared/*": [
-        "packages/shared/*"
+        "src/packages/shared/*"
       ],
       "@/*": [
-        "*"
+        "src/*"
       ]
     }
   },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules"
   ]
