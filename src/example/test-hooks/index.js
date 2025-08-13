@@ -5,6 +5,8 @@ import React, {
   useLayoutEffect,
   useRef,
   useImperativeHandle,
+  useMemo,
+  useCallback,
 } from 'react';
 
 function incrementAnimalCountReducer(state, action) {
@@ -48,6 +50,11 @@ function TestHooks() {
     catCount: 0,
     rabbitCount: 0,
   });
+  const sumAnimalCount = useMemo(() => {
+    const { dogCount, catCount, rabbitCount } = animalCount;
+    return dogCount + catCount + rabbitCount;
+  }, [animalCount]);
+
   const boxRef = useRef(null);
   const dataRef = useRef(null);
 
@@ -88,6 +95,14 @@ function TestHooks() {
     setCount(count + 2);
   };
 
+  const handleClick2 = useCallback(() => {
+    setCount(count + 2);
+  }, []);
+
+  const handleClick3 = useCallback(() => {
+    setCount(count + 2);
+  }, [count]);
+
   const renderAnimalCount = () => {
     const { dogCount, catCount, rabbitCount } = animalCount;
     return (
@@ -95,13 +110,19 @@ function TestHooks() {
         <li onClick={() => dispatch({ type: 'dog' })}>狗：{dogCount}</li>
         <li onClick={() => dispatch({ type: 'cat' })}>猫：{catCount}</li>
         <li onClick={() => dispatch({ type: 'rabbit' })}>兔：{rabbitCount}</li>
+        <li>动物总数：{sumAnimalCount}</li>
       </ul>
     );
   };
 
   return (
     <div>
-      <div onClick={handleClick}>点击我：{count}</div>
+      <div>
+        当前count:{count}
+        <button onClick={handleClick}>点击我</button>
+        <button onClick={handleClick2}>点击我, 新增失败</button>
+        <button onClick={handleClick3}>点击我, 新增成功</button>
+      </div>
       <div>{renderAnimalCount()}</div>
       <div ref={boxRef} id='box'>
         Box

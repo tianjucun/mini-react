@@ -88,3 +88,39 @@ export function useImperativeHandle(ref, init, deps) {
   }
   hookIndex++;
 }
+
+export function useMemo(factory, deps) {
+  const [oldData, oldDeps] = states[hookIndex] || [null, null];
+
+  if (
+    !states[hookIndex] ||
+    deps.some((item, index) => !Object.is(item, oldDeps[index]))
+  ) {
+    const newData = factory();
+    states[hookIndex++] = [newData, deps];
+
+    // 关键点: 返回新的 data
+    return newData;
+  }
+
+  hookIndex++;
+
+  return oldData;
+}
+
+export function useCallback(callback, deps) {
+  const [oldCallback, oldDeps] = states[hookIndex] || [null, null];
+
+  if (
+    !states[hookIndex] ||
+    deps.some((item, index) => !Object.is(item, oldDeps[index]))
+  ) {
+    states[hookIndex++] = [callback, deps];
+    // 关键点: 返回新的 callback
+    return callback;
+  }
+
+  hookIndex++;
+
+  return oldCallback;
+}
