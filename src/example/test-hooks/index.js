@@ -1,4 +1,10 @@
-import React, { useEffect, useReducer, useState, useLayoutEffect } from 'react';
+import React, {
+  useEffect,
+  useReducer,
+  useState,
+  useLayoutEffect,
+  useRef,
+} from 'react';
 
 function incrementAnimalCountReducer(state, action) {
   switch (action.type) {
@@ -20,6 +26,7 @@ function TestHooks() {
     catCount: 0,
     rabbitCount: 0,
   });
+  const boxRef = useRef(null);
   useEffect(() => {
     setCount(100);
   }, []);
@@ -33,12 +40,13 @@ function TestHooks() {
 
   useLayoutEffect(() => {
     if (count > 105) {
-      const box = document.getElementById('box');
+      const box = boxRef.current;
+
       box.style.width = '100px';
       box.style.height = '100px';
       box.style.backgroundColor = 'red';
     } else {
-      const box = document.getElementById('box');
+      const box = boxRef.current;
       box.style.width = 'auto';
 
       box.style.height = 'auto';
@@ -71,7 +79,9 @@ function TestHooks() {
     <div>
       <div onClick={handleClick}>点击我：{count}</div>
       <div>{renderAnimalCount()}</div>
-      <div id='box'>Box</div>
+      <div ref={boxRef} id='box'>
+        Box
+      </div>
     </div>
   );
 }
