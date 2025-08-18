@@ -9,10 +9,9 @@
       }
     ],
     [
-      "@babel/preset-react",
+      "@babel/preset-react", // 需要先安装这个依赖
       {
-        "runtime": "classic",
-        "pragma": "React.createElement"
+        "runtime": "automatic" // 关键配置：启用自动转换
       }
     ]
   ]

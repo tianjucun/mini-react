@@ -12,7 +12,7 @@
         "src/packages/react-dom"
       ],
       "react-dom/*": [
-        "src/packages/react-dom/*"
+        "src/packages/react-dom/src/*"
       ],
       "react-dom-bindings": [
         "src/packages/react-dom-bindings"

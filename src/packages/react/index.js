@@ -1,3 +1,1 @@
-export function createRoot() {
-  console.log('createRoot');
-}
+export default {}

@@ -1,29 +1,16 @@
-// import React from 'react';
-// import ReactDOM from 'react-dom';
-// import Example from '@/example';
+import React from 'react-dom';
+import { createRoot } from 'react-dom/client'
+import ReactDOM from 'react-dom';
 
-// import './version';
+import './version';
+ 
+console.log(ReactDOM);
 
-// ReactDOM.render(
-//   <Example componentName='test-hooks' />,
-//   document.getElementById('root')
-// );
 
-import { jsxDEV as _jsxDEV } from 'react/jsx-dev-runtime';
-const VNode = /*#__PURE__*/ _jsxDEV(
-  'div',
-  {
-    id: 'content',
-    style: 'background: red',
-    children: 'hello',
-  },
-  'h',
-  false,
-  {
-    fileName: 'srcindex.js',
-    lineNumber: 1,
-    columnNumber: 1,
-  },
-  this
-);
-console.log('VNode', VNode);
+const root = createRoot(document.getElementById('root'));
+console.log('root: ', root);
+
+const element = <h1>Hello React Source Code!</h1>
+console.log(element);
+
+root.render(element);
