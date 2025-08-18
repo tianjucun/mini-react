@@ -1,0 +1,56 @@
+# 2025/08/18 Webpack 中 react-dom 别名配置问题笔记
+
+## 一、初始问题
+
+在实现 mini-react 的时，本地想要通过别名匹配当前启动的模式，动态加载不同的 react 包，但是遇到了问题。Module not found: Error: Can't resolve 'react-dom/client' 错误，即使配置了相关别名，仍无法正确解析模块路径。
+
+```javascript
+const miniReactPathAliasConfig = resolvePath({
+  react: 'src/packages/react',
+  'react-dom': 'src/packages/react-dom',
+   'react-dom/client'  :  'src/packages/react-dom/src/client'  , 
+  'react-dom-bindings': 'src/packages/react-dom-bindings',
+  'react-reconciler': 'src/packages/react-reconciler',
+  scheduler: 'src/packages/scheduler',
+  shared: 'src/packages/shared',
+});
+
+const reactPathAliasConfig = {
+  react: 'react',
+  'react-dom': 'react-dom',
+  'react-dom-bindings': 'react-dom-bindings',
+  'react-reconciler': 'react-reconciler',
+  scheduler: 'scheduler',
+  shared: 'shared',
+};
+```
+
+## 二、大概从以下方向尝试解决问题
+
+1. **尝试基本别名配置**：一开始配置了 'react-dom': 'src/packages/react-dom' 和 'react-dom/client': 'src/packages/react-dom/src/client'，但出现解析错误。
+2. **排查路径问题**：检查发现路径格式正确，目标路径存在且有入口文件（如 index.js），排除了路径本身的问题。
+3. **考虑别名优先级**：意识到可能是 'react-dom' 和 'react-dom/client' 别名存在冲突，更短的别名 'react-dom' 覆盖了更长的 'react-dom/client'。
+4. **验证 Webpack 对特殊字符的支持**：确认 Webpack 的 alias 完全支持配置带 / 的别名，不是导致问题的原因。
+5. **探索通配符配置**：发现使用 'react-dom*': 'src/packages/react-dom/src*' 这种通配符写法可以简洁地处理一系列有规律的路径映射，但还需完善对根模块的处理。
+
+## 三、解决方案
+
+> https://webpack.js.org/configuration/resolve/#resolvealias
+
+最终找到的完美配置方案如下：
+
+```javascript
+{
+  'react-dom$': 'src/packages/react-dom',
+  'react-dom*': 'src/packages/react-dom/src*'
+}
+```
+
+1. **'react-dom\$': 'src/packages/react-dom'** ：$ 是正则中的结束符，用于精确匹配 react-dom 这个完整模块名，当导入 import ReactDOM from 'react-dom' 时，会精确指向 src/packages/react-dom。
+2. **'react-dom\*': 'src/packages/react-dom/src\*'** ：不带 $ 的通配符，匹配所有以 react-dom 开头且未被上面精确匹配的路径，处理所有子路径，如 react-dom/client 会被映射为 src/packages/react-dom/src/client。
+
+## 四、使用别名的一些小知识点
+
+1. **Webpack 别名解析规则**：遵循 "最长匹配优先 + 配置顺序辅助"，当存在嵌套关系的别名时，具体别名放前面，通用别名放后面可优先匹配。
+2. **通配符用法**：\* 通配符可匹配任意字符（包括 /），适合处理一系列有规律的路径映射，* 会自动匹配后续的路径片段并替换。
+3. **精确匹配与通配符结合**：带 $ 的精确匹配优先于通配符匹配，能避免冲突，同时覆盖根模块和所有子模块的情况。
