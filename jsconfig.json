@@ -17,8 +17,8 @@
       "react-dom-bindings": [
         "src/packages/react-dom-bindings"
       ],
-      "react-dom-bindings/*": [
-        "src/packages/react-dom-bindings/*"
+      "react-dom-bindings*": [
+        "src/packages/react-dom-bindings/src*"
       ],
       "react-reconciler": [
         "src/packages/react-reconciler"

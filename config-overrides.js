@@ -10,9 +10,10 @@ const resolvePath = (config) =>
 
 const miniReactPathAliasConfig = resolvePath({
   react: 'src/packages/react',
+  'react-dom-bindings$': 'src/packages/react-dom-bindings',
+  'react-dom-bindings*': 'src/packages/react-dom-bindings/src*',
   'react-dom$': 'src/packages/react-dom',
   'react-dom*': 'src/packages/react-dom/src*',
-  'react-dom-bindings': 'src/packages/react-dom-bindings',
   'react-reconciler': 'src/packages/react-reconciler',
   scheduler: 'src/packages/scheduler',
   shared: 'src/packages/shared',
