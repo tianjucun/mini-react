@@ -15,7 +15,14 @@ function NullComponent() {
 
 function Title({ color }) {
   return (
-    <h1 className='aaa' style={{ color, fontSize: '50px' }}>
+    <h1
+      onClick={(e) => {
+        e.stopPropagation();
+        console.log('click title');
+      }}
+      className='aaa'
+      style={{ color, fontSize: '50px' }}
+    >
       Hello React Fiber
       <NullComponent />
     </h1>
@@ -24,7 +31,11 @@ function Title({ color }) {
 
 function App() {
   const element = (
-    <div>
+    <div
+      onClick={() => {
+        console.log('click app');
+      }}
+    >
       <Title color='red' />
       <ul>
         <li name='zhangsan' style={{ color: 'blue' }} data-src='123'>

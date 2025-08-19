@@ -1,0 +1,17 @@
+import { getFiberCurrentPropsFromNode } from 'react-dom-bindings/client/ReactDOMComponentTree';
+
+export default function getListener(instance, registrationName) {
+  const { stateNode } = instance;
+  if (stateNode === null) {
+    return null;
+  }
+
+  const props = getFiberCurrentPropsFromNode(stateNode);
+  if (props === null) {
+    return null;
+  }
+
+  const listener = props[registrationName];
+
+  return listener;
+}

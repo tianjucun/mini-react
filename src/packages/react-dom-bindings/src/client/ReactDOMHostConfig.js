@@ -1,11 +1,14 @@
 import { setInitialDOMProperties } from './ReactDOMComponent';
+import { precacheFiberNode, updateFiberProps } from './ReactDOMComponentTree';
 
 export function appendInitialChild(parent, child) {
   parent.appendChild(child);
 }
 
-export function createInstance(type) {
+export function createInstance(type, props, internalInstanceHandle) {
   const domElement = document.createElement(type);
+  precacheFiberNode(internalInstanceHandle, domElement);
+  updateFiberProps(domElement, props);
   return domElement;
 }
 

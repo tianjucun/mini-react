@@ -15,8 +15,8 @@ export function completeWork(current, workInProgress) {
       break;
     }
     case HostComponent: {
-      const { type } = workInProgress;
-      const instance = createInstance(type);
+      const { type, pendingProps } = workInProgress;
+      const instance = createInstance(type, pendingProps, workInProgress);
       appendAllChildren(instance, workInProgress);
       workInProgress.stateNode = instance;
       // 完成instance的宿主属性的初始化
