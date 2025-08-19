@@ -2,6 +2,8 @@ import { createWorkInProgress } from './ReactFiber';
 import { beginWork } from './ReactFiberBeginWork';
 import { scheduleCallback } from 'scheduler';
 import { completeWork } from './ReactFiberCompleteWork';
+import { MutationMask, NoFlags } from './ReactFiberFlags';
+import { commitMutaionEffectsOnFiber } from './ReactFiberCommitWork';
 
 // 跟踪 React 协调过程中正在处理的 Fiber 节点
 let workInProgress = null;
@@ -24,6 +26,7 @@ function performConcurrentWorkOnRoot(root) {
   const finishedWork = root.current.alternate;
   // 在 fiberRoot 上更新 finishedWork
   root.finishedWork = finishedWork;
+  commitRoot(root);
 }
 
 function renderRootSync(root) {
@@ -62,9 +65,6 @@ function performUnitOfWork(unitOfWork) {
     // 更新全局的 workInProgress
     workInProgress = next;
   }
-
-  // TODO: beginWork 未实现, 防止死循环
-  // workInProgress = null;
 }
 
 function completeUnitOfWork(unitOfWork) {
@@ -87,4 +87,23 @@ function completeUnitOfWork(unitOfWork) {
     completedWork = returnFiber;
     workInProgress = completedWork;
   }
+}
+
+function commitRoot(root) {
+  // console.log('commitRoot', root);
+  // const container = root.containerInfo;
+  // const rootFiber = root.finishedWork;
+  // container.appendChild(rootFiber.child.stateNode);
+
+  const { finishedWork } = root;
+  const subtreeHasEffects =
+    (finishedWork.subtreeFlags & MutationMask) !== NoFlags;
+  const rootHasEffects = (finishedWork.flags & MutationMask) !== NoFlags;
+
+  if (subtreeHasEffects || rootHasEffects) {
+    commitMutaionEffectsOnFiber(finishedWork, root);
+  }
+
+  // 更新 FiberRoot 的 rootFiber 指向
+  root.current = finishedWork;
 }

@@ -17,3 +17,11 @@ export function createTextInstance(content) {
 export function finalizeInitialChildren(domElement, type, props) {
   setInitialDOMProperties(domElement, type, props);
 }
+
+export function insertBefore(parentNode, node, beforeChild) {
+  parentNode.insertBefore(node, beforeChild);
+}
+
+export function appendChild(parentNode, child) {
+  parentNode.appendChild(child);
+}
