@@ -11,11 +11,15 @@ console.log('root: ', root);
 
 const element = (
   <div>
-    <h1>Hello React Fiber</h1>
+    <h1 className='aaa' style={{ color: 'red', fontSize: '50px' }}>
+      Hello React Fiber
+    </h1>
     <ul>
-      <li>1. 可中断与恢复</li>
-      <li>2. 根据不同的优先级在合适时机执行</li>
-      <li>3. 复用之前已经完成的工作</li>
+      <li name='zhangsan' style={{ color: 'blue' }} data-src='123'>
+        1. 可中断与恢复
+      </li>
+      <li style={{ color: 'blue' }}>2. 根据不同的优先级在合适时机执行</li>
+      <li style={{ color: 'blue' }}>3. 复用之前已经完成的工作</li>
     </ul>
   </div>
 );
