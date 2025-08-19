@@ -79,6 +79,7 @@ function createChildReconciler(shouldTrackSideEffects) {
     ) {
       const created = createFiberFromText('' + element);
       created.return = returnFilber;
+      return created;
     }
 
     // 处理普通 element 转换的情况
@@ -92,6 +93,8 @@ function createChildReconciler(shouldTrackSideEffects) {
           break;
       }
     }
+
+    return null;
   }
 
   /**

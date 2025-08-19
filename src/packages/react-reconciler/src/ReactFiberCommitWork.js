@@ -1,5 +1,10 @@
 import { MutationMask, Placement } from './ReactFiberFlags';
-import { HostComponent, HostRoot, HostText } from './ReactWorkTag';
+import {
+  FunctionComponent,
+  HostComponent,
+  HostRoot,
+  HostText,
+} from './ReactWorkTag';
 import {
   insertBefore,
   appendChild,
@@ -120,6 +125,7 @@ export function commitMutaionEffectsOnFiber(finishedWork, root) {
     case HostRoot:
     case HostComponent:
     case HostText:
+    case FunctionComponent:
       recursivelyTraverseMutationEffects(root, finishedWork);
       commitReconcilationEffects(finishedWork);
       break;
