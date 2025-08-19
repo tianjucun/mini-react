@@ -1,6 +1,7 @@
 import { createWorkInProgress } from './ReactFiber';
 import { beginWork } from './ReactFiberBeginWork';
 import { scheduleCallback } from 'scheduler';
+import { completeWork } from './ReactFiberCompleteWork';
 
 // 跟踪 React 协调过程中正在处理的 Fiber 节点
 let workInProgress = null;
@@ -67,16 +68,23 @@ function performUnitOfWork(unitOfWork) {
 }
 
 function completeUnitOfWork(unitOfWork) {
-  let completedUnitOfWork = unitOfWork;
-  while (completedUnitOfWork !== null) {
-    console.log('completedUnitOfWork', completedUnitOfWork);
+  let completedWork = unitOfWork;
+  while (completedWork !== null) {
+    // 老的 fiber 节点
+    const current = completedWork.alternate;
+    const returnFiber = completedWork.return;
+    completeWork(current, completedWork);
 
-    if (completedUnitOfWork.sibling) {
-      workInProgress = completedUnitOfWork.sibling;
+    // 处理兄弟节点
+    const siblingFiber = completedWork.sibling;
+    if (siblingFiber !== null) {
+      workInProgress = siblingFiber;
       return;
     }
 
-    completedUnitOfWork = completedUnitOfWork.return;
-    workInProgress = completedUnitOfWork;
+    // 最后一个子节点了也完成DOM创建和关联了
+    // 回溯到父节点
+    completedWork = returnFiber;
+    workInProgress = completedWork;
   }
 }
