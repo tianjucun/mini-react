@@ -1,8 +1,12 @@
-import { HostRoot } from './ReactWorkTag'
+import {
+  HostComponent,
+  HostRoot,
+  HostText,
+  IndeterminateComponent,
+} from './ReactWorkTag';
 import { NoFlags } from './ReactFiberFlags';
 
 function FiberNode(tag, pendingProps, key) {
-
   // 实例相关属性
 
   // 标记 Fiber 类型
@@ -63,7 +67,7 @@ function FiberNode(tag, pendingProps, key) {
   // 副作用相关
 
   // 当前节点的副作用标记（如需要更新、删除等）
-  this.flag = NoFlags;
+  this.flags = NoFlags;
   // 子树的副作用标记
   this.subtreeFlags = NoFlags;
   // 需要删除的子节点列表
@@ -85,17 +89,17 @@ export function createHostRootFiber() {
 
 /**
  * 基于旧的 Fiber 节点和新的 props 初始化根 Fiber 节点
- * @param {*} current 
- * @param {*} pendingProps 
- * @returns 
+ * @param {*} current
+ * @param {*} pendingProps
+ * @returns
  */
 export function createWorkInProgress(current, pendingProps) {
   let workInProgress = current.alternate;
-  if(workInProgress === null) {
+  if (workInProgress === null) {
     workInProgress = createFiber(current.tag, pendingProps, current.key);
     workInProgress.type = current.type;
     workInProgress.stateNode = current.stateNode;
-    
+
     // 实现双缓冲的关键
     // A ---alternate---> workInProgress
     // workInProgress ---alternate---> A
@@ -116,4 +120,42 @@ export function createWorkInProgress(current, pendingProps) {
   workInProgress.index = current.index;
 
   return workInProgress;
+}
+
+/**
+ * 根据 type 和 props 创建 fiber 节点
+ * 这里的设计挺有意思的, 由于 createFiber 需要的参数是 tag,props,key
+ * 而我们又不知道具体的 tag 是什么, 需要通过 type 动态计算
+ * 就可以通过 createFiberFromTypeAndProps 这个方法实现根据 type 创建 Fiber 节点
+ *
+ * 为什么 createFiber 不提供 type 参数呢
+ * 我想应该是因为 type 对于 Fiber 而言并不是核心参数,
+ * 而 tag 才是 Fiber 的类型标识, type 只是 Fiber 对应的 element 的一种类型标识
+ * @param {*} type
+ * @param {*} pendingProps
+ * @param {*} key
+ * @returns
+ */
+export function createFiberFromTypeAndProps(type, pendingProps, key) {
+  let tag = IndeterminateComponent;
+  if (typeof type === 'string') {
+    tag = HostComponent;
+  }
+  const newFiber = createFiber(tag, pendingProps, key);
+  newFiber.type = type;
+  return newFiber;
+}
+
+/**
+ * 根据 ReactElement 创建 Fiber 节点
+ * @param {*} element
+ * @returns
+ */
+export function createFiberFromElement(element) {
+  const { type, key, props: pendingProps } = element;
+  return createFiberFromTypeAndProps(type, pendingProps, key);
+}
+
+export function createFiberFromText(text) {
+  return createFiber(HostText, text, null);
 }
