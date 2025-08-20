@@ -1,6 +1,10 @@
 import { REACT_ELEMENT_TYPE } from 'shared/ReactSymbol';
-import { Placement } from './ReactFiberFlags';
-import { createFiberFromElement, createFiberFromText } from './ReactFiber';
+import { Placement, ChildDeletion } from './ReactFiberFlags';
+import {
+  createFiberFromElement,
+  createFiberFromText,
+  createWorkInProgress,
+} from './ReactFiber';
 import isArray from 'shared/array';
 
 /**
@@ -39,6 +43,51 @@ function createChildReconciler(shouldTrackSideEffects) {
     return newFiber;
   }
 
+  function deleteChild(returnFiber, childToDelete) {
+    if (!shouldTrackSideEffects) {
+      return;
+    }
+
+    const deletions = returnFiber.deletetions;
+    if (deletions === null) {
+      returnFiber.deletions = [childToDelete];
+      returnFiber.flags |= ChildDeletion;
+    } else {
+      returnFiber.deletions.push(childToDelete);
+    }
+  }
+
+  /**
+   * 从当前 Fiber 节点(包括当前节点)开始向右删除(标记删除)所有兄弟节点
+   * @param {*} returnFiber
+   * @param {*} currentFirstFiber
+   * @returns
+   */
+  function deleteRemainingChildren(returnFiber, currentFirstFiber) {
+    if (!shouldTrackSideEffects) {
+      return;
+    }
+
+    let childToDelete = currentFirstFiber;
+    while (childToDelete !== null) {
+      deleteChild(returnFiber, node);
+      childToDelete = childToDelete.sibling;
+    }
+  }
+
+  /**
+   * 基于目标 fiber 创建一个新的 Fiber节点
+   * @param {*} fiber
+   * @param {*} pendingProps
+   * @returns
+   */
+  function useFiber(fiber, pendingProps) {
+    const clone = createWorkInProgress(fiber, pendingProps);
+    clone.index = 0;
+    clone.sibling = null;
+    return clone;
+  }
+
   /**
    * 协调单个 ReactElement 的转换
    * 将单个 ReactElement 转为 ReactFiber 节点
@@ -48,6 +97,29 @@ function createChildReconciler(shouldTrackSideEffects) {
    * @returns
    */
   function reconcileSingleElement(returnFiber, currentFirstFiber, element) {
+    if (currentFirstFiber !== null) {
+      let oldFiberChild = currentFirstFiber;
+
+      // 检查老 Fiber 中是否存在与 element key 相等的 Fiber
+      while (oldFiberChild.key !== element.key) {
+        deleteChild(returnFiber, oldFiberChild);
+        oldFiberChild = oldFiberChild.sibling;
+      }
+
+      if (oldFiberChild.type === element.type) {
+        // 复用老Fiber, 并删除其余 Fiber
+        const existing = useFiber(oldFiberChild, element.props);
+        existing.return = returnFiber;
+        deleteRemainingChildren(returnFiber, oldFiberChild.sibling);
+        return existing;
+      }
+
+      if (oldFiberChild !== null) {
+        // key 和 type 都不相等删除所有老 Fiber
+        deleteRemainingChildren(returnFiber, oldFiberChild);
+      }
+    }
+
     const created = createFiberFromElement(element);
     created.return = returnFiber;
     return created;

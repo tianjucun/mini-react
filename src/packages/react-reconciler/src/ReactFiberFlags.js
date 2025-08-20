@@ -9,3 +9,6 @@ export const Update = 0b00000000000000000000000100;
 
 // React Fiber 节点标识位: 变更标识位掩码
 export const MutationMask = Placement | Update;
+
+// React Fiber 节点标识位: 删除
+export const ChildDeletion = 0b00000000000000000000001000;
