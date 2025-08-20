@@ -59,6 +59,10 @@ function createChildReconciler(shouldTrackSideEffects) {
    * @param {*} index 在父级 Fiber 对应的下标
    */
   function placeChild(newFiber, index) {
+    if (newFiber === null) {
+      return;
+    }
+
     newFiber.index = index;
     if (shouldTrackSideEffects) {
       newFiber.flags |= Placement;
