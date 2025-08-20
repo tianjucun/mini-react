@@ -1,54 +1,33 @@
-import React from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import ReactDOM from 'react-dom';
 
-import './version';
-
-console.log(ReactDOM);
-
-const root = createRoot(document.getElementById('root'));
-console.log('root: ', root);
-
-function NullComponent() {
-  return null;
-}
-
-function Title({ color }) {
-  return (
-    <h1
-      onClick={(e) => {
-        e.stopPropagation();
-        console.log('click title');
-      }}
-      className='aaa'
-      style={{ color, fontSize: '50px' }}
-    >
-      Hello React Fiber
-      <NullComponent />
-    </h1>
-  );
-}
+let __showReactDOMLi = false;
 
 function App() {
-  const element = (
-    <div
-      onClick={() => {
-        console.log('click app');
-      }}
-    >
-      <Title color='red' />
-      <ul>
-        <li name='zhangsan' style={{ color: 'blue' }} data-src='123'>
-          1. 可中断与恢复
-        </li>
-        <li style={{ color: 'blue' }}>2. 根据不同的优先级在合适时机执行</li>
-        <li style={{ color: 'blue' }}>3. 复用之前已经完成的工作</li>
-      </ul>
-    </div>
+  const handleToggleClick = () => {
+    __showReactDOMLi = !__showReactDOMLi;
+    console.log(__showReactDOMLi);
+  };
+  return (
+    <ul onClick={handleToggleClick}>
+      <li>React</li>
+      {__showReactDOMLi && <li>ReactDOM</li>}
+    </ul>
   );
-  return element;
 }
+const root = createRoot(document.getElementById('root'));
+const element1 = (
+  <p>
+    <span>1</span>
+    <span>2</span>
+  </p>
+);
+const element2 = <span>2</span>;
 
-// console.log(element);
+root.render(element1);
 
-root.render(<App />);
+document.body.addEventListener('click', () => {
+  console.log('click to change render');
+  root.render(element2);
+});
+
+// createRoot(document.getElementById('root')).render(<App />);
