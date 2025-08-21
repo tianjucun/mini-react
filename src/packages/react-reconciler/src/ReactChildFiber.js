@@ -393,6 +393,8 @@ function createChildReconciler(shouldTrackSideEffects) {
 
     let oldFiber = currentFirstFiber;
 
+    let lastPlacedIndex = 0;
+
     for (; oldFiber !== null && newIndex < newChildren.length; newIndex++) {
       const newChild = newChildren[newIndex];
       const newFiber = updateSlot(returnFiber, oldFiber, newChild);

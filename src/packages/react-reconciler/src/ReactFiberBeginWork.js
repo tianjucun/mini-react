@@ -50,6 +50,12 @@ function mountIndeterminateComponent(current, workInProgress, type) {
   return reconcilerChildren(current, workInProgress, value);
 }
 
+function updateFunctionComponent(current, workInProgress, type) {
+  const props = workInProgress.pendingProps;
+  const nextChldren = renderWithHooks(current, workInProgress, type, props);
+  return reconcilerChildren(current, workInProgress, nextChldren);
+}
+
 export function beginWork(current, workInProgress) {
   switch (workInProgress.tag) {
     case IndeterminateComponent:
@@ -62,6 +68,12 @@ export function beginWork(current, workInProgress) {
       return updateHostRoot(current, workInProgress);
     case HostComponent:
       return updateHostComponent(current, workInProgress);
+    case FunctionComponent:
+      return updateFunctionComponent(
+        current,
+        workInProgress,
+        workInProgress.type
+      );
     case HostText:
       // 到叶子节点了
       return null;

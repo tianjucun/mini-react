@@ -4,6 +4,7 @@ import { scheduleCallback } from 'scheduler';
 import { completeWork } from './ReactFiberCompleteWork';
 import { MutationMask, NoFlags } from './ReactFiberFlags';
 import { commitMutaionEffectsOnFiber } from './ReactFiberCommitWork';
+import { finishQueueingConcurrentUpdates } from './ReactFiberConcurrentUpdates';
 
 // 跟踪 React 协调过程中正在处理的 Fiber 节点
 let workInProgress = null;
@@ -40,6 +41,7 @@ function renderRootSync(root) {
 
 function prepareFreshStack(root) {
   workInProgress = createWorkInProgress(root.current, null);
+  finishQueueingConcurrentUpdates();
 }
 
 function workLoopSync() {
