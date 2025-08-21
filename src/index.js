@@ -1,18 +1,14 @@
-import React, { useReducer } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-function reducer(count, action) {
-  if (action === 'inc') {
-    return count + 1;
-  }
-  return count;
-}
-
 function App() {
-  const [count, setCount] = useReducer(reducer, 1);
+  const [count, setCount] = useState(1);
+  console.log('App render count', Date.now(), count);
   const handleClick = () => {
     console.log('App click count', count);
-    setCount('inc');
+    setCount(count + 1);
+    setCount(count + 1);
+    setCount(count + 1);
   };
   return (
     <div>

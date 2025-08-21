@@ -142,7 +142,8 @@ function updateDOMProperties(domElement, updatePayload) {
       setValueForStyles(domElement, propValue);
     } else if (propKey === 'children') {
       setTextContent(domElement, propValue);
-    } else {
+    } else if (registrationNameDependencies.hasOwnProperty(propKey));
+    else {
       setValueForProperty(domElement, propKey, propValue);
     }
   }

@@ -7,3 +7,7 @@ function resolveDispatcher() {
 export function useReducer(reducer, initialArg) {
   return resolveDispatcher().useReducer(reducer, initialArg);
 }
+
+export function useState(initialArg) {
+  return resolveDispatcher().useState(initialArg);
+}

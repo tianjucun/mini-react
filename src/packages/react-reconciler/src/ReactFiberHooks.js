@@ -1,6 +1,7 @@
 import ReactSharedInternals from 'shared/ReactSharedInternals';
 import { scheduleUpdateOnFiber } from './ReactFiberWorkLoop';
 import { enqueueConcurrentHookUpdate } from './ReactFiberConcurrentUpdates';
+import objectIs from 'shared/objectIs';
 
 const { ReactCurrentDispatcher } = ReactSharedInternals;
 
@@ -17,11 +18,70 @@ let currentHook = null;
 
 export const HookDispatcherOnMount = {
   useReducer: mountReducer,
+  useState: mountState,
 };
 
 export const HookDispatcherOnUpdate = {
   useReducer: updateReducer,
+  useState: updateState,
 };
+
+function baseReducer(state, action) {
+  return typeof action === 'function' ? action(state) : action;
+}
+
+function mountState(initialState) {
+  if (typeof initialState === 'function') {
+    initialState = initialState();
+  }
+
+  const hook = mountWorkInProgressHook();
+  hook.memoizedState = initialState;
+  const queue = {
+    pending: null,
+    lastRenderedReducer: baseReducer,
+    lastRenderedState: initialState,
+  };
+  hook.queue = queue;
+
+  const dispatch = (queue.dispatch = dispatchSetState.bind(
+    null,
+    currentlyRenderingFiber,
+    queue
+  ));
+  return [initialState, dispatch];
+}
+
+function dispatchSetState(fiber, queue, action) {
+  const update = {
+    action,
+    eagerState: null,
+    hasEagerState: false,
+    next: null,
+  };
+
+  const root = enqueueConcurrentHookUpdate(fiber, queue, update);
+
+  const currentState = queue.lastRenderedState;
+  const lastRenderedReducer = queue.lastRenderedReducer;
+  if (lastRenderedReducer !== null) {
+    // 由于不依赖新的状态计算, 可以在 dispatch 阶段就计算出新状态
+    const eagerState = lastRenderedReducer(currentState, action);
+    update.eagerState = eagerState;
+    update.hasEagerState = true;
+
+    if (objectIs(currentState, eagerState)) {
+      // setState 前后值相同不触发渲染
+      return;
+    }
+  }
+
+  scheduleUpdateOnFiber(root);
+}
+
+function updateState() {
+  return updateReducer(baseReducer);
+}
 
 /**
  * 创建新的 hook 对象
@@ -68,6 +128,8 @@ function mountReducer(reducer, initialArg) {
   hook.memoizedState = initialArg;
   const queue = {
     pending: null,
+    lastRenderReducer: reducer,
+    lastRenderState: initialArg,
   };
   hook.queue = queue;
 
@@ -128,11 +190,18 @@ function updateReducer(reducer) {
     let firstUpdate = pendingUpdates.next;
     let update = firstUpdate;
     do {
-      newState = reducer(newState, update.action);
+      if (update.hasEagerState) {
+        // 不依赖新的状态, 比如 setState 可以基于当前状态快速计算出状态
+        newState = update.eagerState;
+      } else {
+        // reducer 是需要基于新的状态进行计算
+        newState = reducer(newState, update.action);
+      }
       update = update.next;
     } while (update !== null && update !== firstUpdate);
   }
   hook.memoizedState = newState;
+  hook.lastRenderedState = newState;
   return [hook.memoizedState, currentQueue.dispatch];
 }
 
