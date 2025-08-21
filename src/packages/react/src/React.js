@@ -1,3 +1,3 @@
-import { useReducer, useState } from './ReactHooks';
+import { useReducer, useState, useEffect } from './ReactHooks';
 import ReactSharedInternals from './ReactSharedInternals';
-export { useReducer, useState, ReactSharedInternals };
+export { useReducer, useState, useEffect, ReactSharedInternals };

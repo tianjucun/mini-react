@@ -2,12 +2,26 @@ import { createWorkInProgress } from './ReactFiber';
 import { beginWork } from './ReactFiberBeginWork';
 import { scheduleCallback } from 'scheduler';
 import { completeWork } from './ReactFiberCompleteWork';
-import { MutationMask, NoFlags } from './ReactFiberFlags';
-import { commitMutaionEffectsOnFiber } from './ReactFiberCommitWork';
+import { MutationMask, NoFlags, Passive } from './ReactFiberFlags';
+import {
+  commitMutaionEffectsOnFiber,
+  commitPassiveMountEffects,
+  commitPassiveUnmountEffects,
+} from './ReactFiberCommitWork';
 import { finishQueueingConcurrentUpdates } from './ReactFiberConcurrentUpdates';
 
 // 跟踪 React 协调过程中正在处理的 Fiber 节点
 let workInProgress = null;
+let rootDoesHavePassiveEffects = false;
+let rootWithPendingPassiveEffects = null;
+
+function flushPassiveEffects() {
+  if (rootWithPendingPassiveEffects !== null) {
+    const root = rootWithPendingPassiveEffects;
+    commitPassiveUnmountEffects(root.current);
+    commitPassiveMountEffects(root, root.current);
+  }
+}
 
 export function scheduleUpdateOnFiber(root) {
   ensureRootIsScheduled(root);
@@ -98,12 +112,28 @@ function commitRoot(root) {
   // container.appendChild(rootFiber.child.stateNode);
 
   const { finishedWork } = root;
+
+  if (
+    (finishedWork.subtreeFlags & Passive) !== NoFlags ||
+    (finishedWork.flags & Passive) !== NoFlags
+  ) {
+    if (!rootDoesHavePassiveEffects) {
+      rootDoesHavePassiveEffects = true;
+      scheduleCallback(flushPassiveEffects);
+    }
+  }
+
   const subtreeHasEffects =
     (finishedWork.subtreeFlags & MutationMask) !== NoFlags;
   const rootHasEffects = (finishedWork.flags & MutationMask) !== NoFlags;
 
   if (subtreeHasEffects || rootHasEffects) {
     commitMutaionEffectsOnFiber(finishedWork, root);
+
+    if (rootDoesHavePassiveEffects) {
+      rootDoesHavePassiveEffects = false;
+      rootWithPendingPassiveEffects = root;
+    }
   }
 
   // 更新 FiberRoot 的 rootFiber 指向
