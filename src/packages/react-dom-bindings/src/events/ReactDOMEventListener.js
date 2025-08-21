@@ -22,14 +22,6 @@ function dispatchDiscreteEvent(
   targtContainer,
   nativeEvent
 ) {
-  console.log(
-    'dispatchDiscreteEvent',
-    domEventName,
-    eventSystemFlags,
-    targtContainer,
-    nativeEvent
-  );
-
   dispatchEvent(domEventName, eventSystemFlags, targtContainer, nativeEvent);
 }
 

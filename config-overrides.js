@@ -69,5 +69,11 @@ module.exports = function override(config, env) {
     '@': path.resolve(__dirname, 'src'), // 配置 @ 指向 src 目录
     ...RealReactPathAlias, // 配置 react 相关的别名
   };
+
+  config.devServer = {
+    ...config.devServer,
+    hot: false, // 暂时先关闭热更新
+  };
+
   return config;
 };

@@ -36,8 +36,9 @@ function createChildReconciler(shouldTrackSideEffects) {
    * @returns
    */
   function placeSingleChild(newFiber) {
-    if (shouldTrackSideEffects) {
+    if (shouldTrackSideEffects && newFiber.alternate === null) {
       // 为当前 Fiber 添加 '插入' 的副作用
+      // 需要保证这个 Fiber 节点是新创建的
       // 后期这个节点会被插入到上次父宿主节点中
       newFiber.flags |= Placement;
     }
@@ -124,22 +125,6 @@ function createChildReconciler(shouldTrackSideEffects) {
     const created = createFiberFromElement(element);
     created.return = returnFiber;
     return created;
-  }
-
-  /**
-   * 设置副作用
-   * @param {*} newFiber 新 Fiber 节点
-   * @param {*} index 在父级 Fiber 对应的下标
-   */
-  function placeChild(newFiber, index) {
-    if (newFiber === null) {
-      return;
-    }
-
-    newFiber.index = index;
-    if (shouldTrackSideEffects) {
-      newFiber.flags |= Placement;
-    }
   }
 
   /**
@@ -258,13 +243,12 @@ function createChildReconciler(shouldTrackSideEffects) {
     }
 
     const current = newFiber.alternate;
-    const oldIndex = current.index;
-    if (newFiber.alternate === null || oldIndex < lastPlacedIndex) {
-      newFiber.flags |= Placement;
-      return lastPlacedIndex;
-    } else {
-      return oldIndex;
+    if (current !== null && current.index >= lastPlacedIndex) {
+      return current.index;
     }
+
+    newFiber.flags |= Placement;
+    return lastPlacedIndex;
   }
 
   /**
@@ -277,9 +261,10 @@ function createChildReconciler(shouldTrackSideEffects) {
   function mapRemainingChildren(returnFiber, currentFirstChild) {
     const existingChildren = new Map();
     let existingChild = currentFirstChild;
-    while (child !== null) {
-      const childKey = child.key !== null ? child.key : child.index;
-      existingChildren.set(childKey, child);
+    while (existingChild !== null) {
+      const childKey =
+        existingChild.key !== null ? existingChild.key : existingChild.index;
+      existingChildren.set(childKey, existingChild);
       existingChild = existingChild.sibling;
     }
     return existingChildren;
@@ -430,7 +415,10 @@ function createChildReconciler(shouldTrackSideEffects) {
     if (oldFiber === null) {
       for (; newIndex < newChildren.length; newIndex++) {
         const newFiber = createChild(returnFiber, newChildren[newIndex]);
-        placeChild(newFiber, newIndex);
+        if (newFiber === null) {
+          continue;
+        }
+        lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIndex);
         if (previousNewFiber === null) {
           resultingFirstChild = newFiber;
         } else {
@@ -452,11 +440,11 @@ function createChildReconciler(shouldTrackSideEffects) {
         newChild
       );
 
-      if (
-        shouldTrackSideEffects &&
-        newFiber !== null &&
-        newFiber.alternate !== null
-      ) {
+      if (newFiber === null) {
+        continue;
+      }
+
+      if (shouldTrackSideEffects && newFiber.alternate !== null) {
         existingChildren.delete(
           newChild.key === null ? newIndex : newChild.key
         );

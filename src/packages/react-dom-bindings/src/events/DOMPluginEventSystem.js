@@ -16,12 +16,6 @@ SimpleEventPlugin.registerEvents();
 const listeningMarker = `_reactListening` + Math.random().toString(36).slice(2);
 
 export function listenToAllSupportedEvents(rootContainerElement) {
-  console.log(
-    'listenToAllSupportedEvents',
-    rootContainerElement,
-    allNativeEvents
-  );
-
   if (!rootContainerElement[listeningMarker]) {
     rootContainerElement[listeningMarker] = true;
     for (const domEventName of allNativeEvents) {
@@ -75,8 +69,6 @@ export function dispatchEventForPluginEventSystem(
   targetInstance,
   targetContainer
 ) {
-  console.log('dispatchEventForPluginEventSystem', arguments);
-
   dispatchEventForPlugins(
     domEventName,
     eventSystemFlags,

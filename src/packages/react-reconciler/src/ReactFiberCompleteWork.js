@@ -1,11 +1,48 @@
-import { NoFlags } from './ReactFiberFlags';
-import { HostComponent, HostRoot, HostText } from './ReactWorkTag';
+import { NoFlags, Update } from './ReactFiberFlags';
+import {
+  FunctionComponent,
+  HostComponent,
+  HostRoot,
+  HostText,
+} from './ReactWorkTag';
+
 import {
   createInstance,
   createTextInstance,
+  appendInitialChild,
+  finalizeInitialChildren,
+  prepareUpdate,
 } from 'react-dom-bindings/client/ReactDOMHostConfig';
-import { finalizeInitialChildren } from 'react-dom-bindings/client/ReactDOMHostConfig';
-import { appendInitialChild } from 'react-dom-bindings/client/ReactDOMHostConfig';
+
+function markUpdate(workInProgress) {
+  workInProgress.flags |= Update;
+}
+
+/**
+ * 更新宿主组件
+ *
+ * 根据新老 Fiber 的 Props计算出需要更新的 payload
+ * 并给对应的 fiber 节点添加更新标记
+ * @param {*} current
+ * @param {*} workInProgress
+ * @param {*} type
+ * @param {*} newProps
+ */
+function updateHostComponent(current, workInProgress, type, newProps) {
+  const oldProps = current.memoizedProps;
+  const instance = workInProgress.stateNode;
+  const updatePayload = prepareUpdate(instance, type, oldProps, newProps);
+  workInProgress.updateQueue = updatePayload;
+  if (updatePayload) {
+    markUpdate(workInProgress);
+  }
+}
+
+function updateTextNode(current, workInProgress, oldText, newText) {
+  if (oldText !== newText) {
+    markUpdate(workInProgress);
+  }
+}
 
 export function completeWork(current, workInProgress) {
   const newProps = workInProgress.pendingProps;
@@ -15,21 +52,38 @@ export function completeWork(current, workInProgress) {
       break;
     }
     case HostComponent: {
-      const { type, pendingProps } = workInProgress;
-      const instance = createInstance(type, pendingProps, workInProgress);
-      appendAllChildren(instance, workInProgress);
-      workInProgress.stateNode = instance;
-      // 完成instance的宿主属性的初始化
-      finalizeInitialChildren(instance, type, newProps);
+      if (current !== null) {
+        updateHostComponent(
+          current,
+          workInProgress,
+          workInProgress.type,
+          newProps
+        );
+      } else {
+        const { type, pendingProps } = workInProgress;
+        const instance = createInstance(type, pendingProps, workInProgress);
+        appendAllChildren(instance, workInProgress);
+        workInProgress.stateNode = instance;
+        // 完成instance的宿主属性的初始化
+        finalizeInitialChildren(instance, type, newProps);
+      }
       bubbleProperties(workInProgress);
       break;
     }
     case HostText: {
-      const instance = createTextInstance(newProps);
-      workInProgress.stateNode = instance;
+      if (current !== null && current.stateNode !== null) {
+        const oldText = current.memoizedProps;
+        updateTextNode(current, workInProgress, oldText, newProps);
+      } else {
+        const instance = createTextInstance(newProps);
+        workInProgress.stateNode = instance;
+      }
       bubbleProperties(workInProgress);
       break;
     }
+    case FunctionComponent:
+      bubbleProperties(workInProgress);
+      break;
     default:
       break;
   }
@@ -87,7 +141,9 @@ function appendAllChildren(parent, workInProgress) {
     }
 
     while (child.sibling === null) {
-      if (child === null || child === workInProgress) {
+      // 到根节点或者到达正在处理的节点了
+      // 说明可以结束了
+      if (child.return === null || child.return === workInProgress) {
         return;
       }
 

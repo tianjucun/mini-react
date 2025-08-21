@@ -23,6 +23,11 @@ export const HookDispatcherOnUpdate = {
   useReducer: updateReducer,
 };
 
+/**
+ * 创建新的 hook 对象
+ * 并挂载到 hook 链表中，更新当前渲染 Fiber 的相关缓存状态
+ * @returns
+ */
 function mountWorkInProgressHook() {
   const hook = {
     memoizedState: null,
@@ -41,6 +46,13 @@ function mountWorkInProgressHook() {
   return workInProgressHook;
 }
 
+/**
+ * 根据 action 创建一个更新对象
+ * 并将更新对象入队，并安排下一次渲染
+ * @param {*} fiber
+ * @param {*} queue
+ * @param {*} action
+ */
 function dispatchReducerAction(fiber, queue, action) {
   const update = {
     action,
@@ -69,6 +81,11 @@ function mountReducer(reducer, initialArg) {
   return [hook.memoizedState, dispatch];
 }
 
+/**
+ * 通过 fiber 获取到待更新的 Hook 链
+ * 并基于当前的 hook 创建新的 Hook 状态对象
+ * @returns
+ */
 function updateWorkInProgressHook() {
   if (currentHook === null) {
     const currentFiber = currentlyRenderingFiber.alternate;
@@ -92,6 +109,12 @@ function updateWorkInProgressHook() {
   return workInProgressHook;
 }
 
+/**
+ * 处理 useReducer 的 dispatch 产生的更新数据
+ * 根据待更新的数据（单向循环链表）计算出新的数据
+ * @param {*} reducer
+ * @returns
+ */
 function updateReducer(reducer) {
   const hook = updateWorkInProgressHook();
   let newState = hook.memoizedState;
@@ -113,6 +136,16 @@ function updateReducer(reducer) {
   return [hook.memoizedState, currentQueue.dispatch];
 }
 
+/**
+ * 调用 Component 获取 ReactElement
+ * 通过识别当前的阶段（挂载/更新阶段）
+ * 动态使用不同的调度器（一套 Hook 实现）实例
+ * @param {*} current
+ * @param {*} workInProgress
+ * @param {*} Component
+ * @param {*} props
+ * @returns
+ */
 export function renderWithHooks(current, workInProgress, Component, props) {
   currentlyRenderingFiber = workInProgress;
 

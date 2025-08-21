@@ -1,4 +1,4 @@
-import { MutationMask, Placement } from './ReactFiberFlags';
+import { MutationMask, Placement, Update } from './ReactFiberFlags';
 import {
   FunctionComponent,
   HostComponent,
@@ -8,6 +8,8 @@ import {
 import {
   insertBefore,
   appendChild,
+  commitUpdate,
+  commitTextUpdate,
 } from 'react-dom-bindings/client/ReactDOMHostConfig';
 
 function recursivelyTraverseMutationEffects(root, parentFiber) {
@@ -121,13 +123,59 @@ function commitReconcilationEffects(finishedWork) {
 }
 
 export function commitMutaionEffectsOnFiber(finishedWork, root) {
+  const flags = finishedWork.flags;
+  const current = finishedWork.alternate;
   switch (finishedWork.tag) {
-    case HostRoot:
-    case HostComponent:
     case HostText:
+      recursivelyTraverseMutationEffects(root, finishedWork);
+      commitReconcilationEffects(finishedWork);
+
+      if (flags & Update) {
+        const textInstance = finishedWork.stateNode;
+        if (textInstance !== null) {
+          const newText = finishedWork.pendingProps;
+          const oldText =
+            current === null ? newText : finishedWork.alternate.memoizedProps;
+
+          commitTextUpdate(textInstance, oldText, newText);
+        }
+      }
+      break;
+    case HostRoot:
+      recursivelyTraverseMutationEffects(root, finishedWork);
+      commitReconcilationEffects(finishedWork);
+      break;
+
     case FunctionComponent:
       recursivelyTraverseMutationEffects(root, finishedWork);
       commitReconcilationEffects(finishedWork);
+      break;
+
+    case HostComponent:
+      recursivelyTraverseMutationEffects(root, finishedWork);
+      commitReconcilationEffects(finishedWork);
+
+      if (flags & Update) {
+        const instance = finishedWork.stateNode;
+        if (instance !== null) {
+          const newProps = finishedWork.memoizedProps;
+          const oldProps = current === null ? newProps : current.memoizedProps;
+          const type = finishedWork.type;
+          const udpatePayload = finishedWork.updateQueue;
+          finishedWork.updateQueue = null;
+          if (udpatePayload) {
+            commitUpdate(
+              instance,
+              udpatePayload,
+              type,
+              oldProps,
+              newProps,
+              finishedWork
+            );
+          }
+        }
+      }
+
       break;
 
     default:
