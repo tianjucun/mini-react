@@ -1,7 +1,14 @@
-import { MutationMask, Placement, Update, Passive } from './ReactFiberFlags';
+import {
+  MutationMask,
+  Placement,
+  Update,
+  Passive,
+  LayoutMask,
+} from './ReactFiberFlags';
 import {
   HasEffect as HookHasEffect,
   Passive as HookPassive,
+  Layout as HookLayout,
 } from './ReactHookEffectTags';
 import {
   FunctionComponent,
@@ -153,6 +160,11 @@ export function commitMutationEffectsOnFiber(finishedWork, root) {
     case FunctionComponent:
       recursivelyTraverseMutationEffects(root, finishedWork);
       commitReconcilationEffects(finishedWork);
+
+      if (flags & Update) {
+        // 处理 layout effect unmount
+        commitHookEffectListUnmount(HookHasEffect | HookLayout, finishedWork);
+      }
       break;
 
     case HostComponent:
@@ -319,4 +331,42 @@ function commitHookEffectListMount(flags, finishedWork) {
       effect = effect.next;
     } while (effect !== firstEffect);
   }
+}
+
+export function commitLayoutEffects(finishedWork, root) {
+  commitLayoutEffectOnFiber(root, finishedWork);
+}
+
+function commitLayoutEffectOnFiber(finishedRoot, finishedWork) {
+  const flags = finishedWork.flags;
+  switch (finishedWork.tag) {
+    case HostRoot:
+      recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
+      break;
+    case FunctionComponent:
+      recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
+      if (flags & LayoutMask) {
+        commitHookLayoutEffects(
+          finishedWork,
+          // 需要保证 Hook 对应的依赖发生了变更
+          // 以及对应的 Hook 是 effect Hook
+          HookHasEffect | HookLayout
+        );
+      }
+      break;
+  }
+}
+
+function recursivelyTraverseLayoutEffects(root, parentFiber) {
+  if (parentFiber.subtreeFlags & LayoutMask) {
+    let child = parentFiber.child;
+    while (child !== null) {
+      commitLayoutEffectOnFiber(root, child);
+      child = child.sibling;
+    }
+  }
+}
+
+function commitHookLayoutEffects(finishedWork, flags) {
+  commitHookEffectListMount(flags, finishedWork);
 }

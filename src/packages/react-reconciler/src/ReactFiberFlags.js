@@ -15,3 +15,5 @@ export const ChildDeletion = 0b00000000000000000000001000;
 
 // React Fiber 节点标识位: Effect 相关
 export const Passive = 0b00000000000000010000000000;
+
+export const LayoutMask = Update;

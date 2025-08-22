@@ -3,3 +3,5 @@ export const NoFlags = 0b0000;
 export const HasEffect = 0b0001;
 // FiberHook tag: 当前 Hook 为 effect Hook
 export const Passive = 0b1000;
+// FiberHook tag: 当前 Hook 为 layout effect
+export const Layout = 0b0100;

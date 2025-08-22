@@ -2,8 +2,12 @@ import ReactSharedInternals from 'shared/ReactSharedInternals';
 import { scheduleUpdateOnFiber } from './ReactFiberWorkLoop';
 import { enqueueConcurrentHookUpdate } from './ReactFiberConcurrentUpdates';
 import objectIs from 'shared/objectIs';
-import { Passive } from './ReactFiberFlags';
-import { HasEffect, Passive as HookPassive } from './ReactHookEffectTags';
+import { Passive, Update as UpdateEffect } from './ReactFiberFlags';
+import {
+  HasEffect,
+  Passive as HookPassive,
+  Layout as HookLayout,
+} from './ReactHookEffectTags';
 
 const { ReactCurrentDispatcher } = ReactSharedInternals;
 
@@ -22,12 +26,14 @@ export const HookDispatcherOnMount = {
   useReducer: mountReducer,
   useState: mountState,
   useEffect: mountEffect,
+  useLayoutEffect: mountLayoutEffect,
 };
 
 export const HookDispatcherOnUpdate = {
   useReducer: updateReducer,
   useState: updateState,
   useEffect: updateEffect,
+  useLayoutEffect: updateLayoutEffect,
 };
 
 function baseReducer(state, action) {
@@ -358,6 +364,14 @@ function pushEffect(tag, create, destroy, deps) {
   currentlyRenderingFiber.updateQueue.lastEffect = effect;
 
   return effect;
+}
+
+function mountLayoutEffect(create, deps) {
+  return mountEffectImpl(UpdateEffect, HookLayout, create, deps);
+}
+
+function updateLayoutEffect(create, deps) {
+  return updateEffectImpl(UpdateEffect, HookLayout, create, deps);
 }
 
 /**

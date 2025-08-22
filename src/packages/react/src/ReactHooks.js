@@ -15,3 +15,7 @@ export function useState(initialArg) {
 export function useEffect(create, deps) {
   return resolveDispatcher().useEffect(create, deps);
 }
+
+export function useLayoutEffect(create, deps) {
+  return resolveDispatcher().useLayoutEffect(create, deps);
+}
