@@ -209,6 +209,17 @@ function updateReducer(reducer) {
   return [hook.memoizedState, currentQueue.dispatch];
 }
 
+/**
+ * 创建 hook 并在当前渲染的 Fiber 节点上添加 "被动的" 标记。
+ * 被动的这个标记, 有一种被动调用的意思, 并非主动调用, 而是
+ * 在某个阶段需要被调用，被处理的一种标记。在这里指，当前 Fiber
+ * 节点下存在待处理的 effect hook。
+ *
+ * @param {*} fiberFlags
+ * @param {*} hookFlags
+ * @param {*} create
+ * @param {*} deps
+ */
 function mountEffect(create, deps) {
   return mountEffectImpl(Passive, HookPassive, create, deps);
 }
@@ -225,6 +236,29 @@ function mountEffectImpl(fiberFlags, hookFlags, create, deps) {
   );
 }
 
+/**
+ * 创建函数组件的 updateQueue
+ * 函数组件的 updateQueue 的特点，主要用来存储 effect 相关 Hook 信息
+ *
+ * effect hook 相对 state hook ，不存在一串待更新的数据，
+ * 所以单个 effect 不需要类似 queue 的结构。
+ * 但是需要在一定时机去消费当前 Fiber 下对应的 effect hook。
+ * 目前 fiber 结构上存储 hook 信息只有 memoizedState，
+ * memoizedState 对应的是当前 fiber 下的所有 Hook 调用链。
+ * 并不满足单纯的 effect Hook 使用要求，所以需要在 Fiber 结构
+ * 上利用现有的 udpateQueue 存储对应的 effectHook 调用链，
+ * 方便后期进行消费，处理和优化。
+ *
+ * 上面的 fiber 特指：FunctionComponent Fiber 节点
+ * 因为 Hook 只能在函数组件下只用，而上面无论说的 memoizedState
+ * 还是 updateQueue 都是跟 Hook 相关的调用相关信息的存储。
+ *
+ * 可以理解为 updateQueue 在这个场景下只关注当前函数组件下
+ * 所有的 effect 的调用，lastEffect 对应的是一个单向循环链表，
+ * 既：lastEffect -> effect1 -> effect2 -> effect1 -> ...
+ *
+ * @returns
+ */
 function createFunctionComponentUpdateQueue() {
   return {
     lastEffect: null,
@@ -236,6 +270,15 @@ function updateEffect(create, deps) {
   return updateEffectImpl(Passive, HookPassive, create, deps);
 }
 
+/**
+ * 检查依赖是否发生变更，并创建新的 effect
+ * 重新组织 effect 链表
+ * @param {*} fiberFlags
+ * @param {*} hookFlags
+ * @param {*} create
+ * @param {*} deps
+ * @returns
+ */
 function updateEffectImpl(fiberFlags, hookFlags, create, deps) {
   const hook = updateWorkInProgressHook();
   const nextDeps = deps === undefined ? null : deps;
@@ -246,13 +289,17 @@ function updateEffectImpl(fiberFlags, hookFlags, create, deps) {
     if (nextDeps !== null) {
       const prevDeps = prevEffect.deps;
       if (areHookInputEqual(nextDeps, prevDeps)) {
+        // 无依赖变更，收集 Passive effect
         hook.memoizedState = pushEffect(hookFlags, create, destroy, nextDeps);
         return;
       }
     }
   }
+
+  // 存在依赖变更，fiber 上添加对应的 Passive 标记
   currentlyRenderingFiber.flags |= fiberFlags;
   hook.memoizedState = pushEffect(
+    // 添加依赖表更标记 HasEffect
     HasEffect | hookFlags,
     create,
     destroy,
@@ -261,7 +308,8 @@ function updateEffectImpl(fiberFlags, hookFlags, create, deps) {
 }
 
 function areHookInputEqual(nextDeps, prevDeps) {
-  for (let i = 0; i < nextDeps; i++) {
+  const minLength = Math.min(nextDeps.length, prevDeps.length);
+  for (let i = 0; i < minLength; i++) {
     if (objectIs(nextDeps[i], prevDeps[i])) {
       continue;
     }
@@ -270,6 +318,21 @@ function areHookInputEqual(nextDeps, prevDeps) {
   return true;
 }
 
+/**
+ * 创建一个新的 effect，并指定对应的 tag
+ * 不同的 tag 对应着后期在不同的阶段进行处理
+ *
+ * 这里会将 effect 相关信息以一种链表的结构
+ * 存储到当前 Fiber 对应的 updateQueue 中。
+ *
+ * 这种链表存储与其他 state Hooks 是独立的两套存储。
+ * 但是都存储在 hook 的 memoizedState 中
+ * @param {*} tag
+ * @param {*} create
+ * @param {*} destroy
+ * @param {*} deps
+ * @returns
+ */
 function pushEffect(tag, create, destroy, deps) {
   const effect = {
     tag,
@@ -281,17 +344,18 @@ function pushEffect(tag, create, destroy, deps) {
   const updateQueue = currentlyRenderingFiber.updateQueue;
   if (updateQueue === null) {
     currentlyRenderingFiber.updateQueue = createFunctionComponentUpdateQueue();
-    currentlyRenderingFiber.updateQueue.lastEffect = effect.next = effect;
+    effect.next = effect;
   } else {
-    const lastEffect = currentlyRenderingFiber.updateQueue.lastEffect;
+    const lastEffect = updateQueue.lastEffect;
     if (lastEffect === null) {
+      // Circular
       effect.next = effect;
     } else {
       effect.next = lastEffect.next;
       lastEffect.next = effect;
     }
-    currentlyRenderingFiber.updateQueue.lastEffect = effect;
   }
+  currentlyRenderingFiber.updateQueue.lastEffect = effect;
 
   return effect;
 }
@@ -307,8 +371,27 @@ function pushEffect(tag, create, destroy, deps) {
  * @returns
  */
 export function renderWithHooks(current, workInProgress, Component, props) {
+  // 在函数组件场景下
+  // currentlyRenderingFiber 对应的是当前正在处理渲染的 Fiber
+  // 数据在处理用户的函数组件时，保留了一种环境上下文信息
+  // 以便我们在 Hook 处理时可以有效的知道当前正在处理渲染 的 Fiber
+  // 放到全局可能也是考虑到程序内存的一种优化，不需要来回传递参数，
+  // 也不需要通过各种嵌套的闭包进行数据的访问
+  // 而是在进入渲染前，对于当前渲染环境的一种重置
   currentlyRenderingFiber = workInProgress;
+
+  // 清空函数组件下所有类型 Hook 的调用信息
+  // 内部可以灵活的根据自己的情况重新创建 Hook
+  // 而不需要过重的关注老 Hook 的更新
   workInProgress.memoizedState = null;
+
+  // 在函数组件场景下清空之前的 Hook 调用信息
+  // 因为有一些 Hook 在更新阶段对应的依赖并没有发生改变
+  // 此时我们要做的是重新创建 effect，因为 tag 不同了
+  // 有依赖变化的 tag 关注的可能是： HasEffect | Passive
+  // 无依赖变化的 tag 关注的是：Passive，只做收集
+  // updateQueue 不可以在 Component 调用完就清除
+  // 因为 updateQueue 可能会在 commit 阶段结束后异步被消费的
   workInProgress.updateQueue = null;
 
   if (current !== null && current.memoizedState !== null) {

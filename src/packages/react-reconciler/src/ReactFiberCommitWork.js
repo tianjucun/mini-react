@@ -20,7 +20,7 @@ function recursivelyTraverseMutationEffects(root, parentFiber) {
   if (parentFiber.subtreeFlags & MutationMask) {
     let { child } = parentFiber;
     while (child !== null) {
-      commitMutaionEffectsOnFiber(child, root);
+      commitMutationEffectsOnFiber(child, root);
       child = child.sibling;
     }
   }
@@ -126,7 +126,7 @@ function commitReconcilationEffects(finishedWork) {
   }
 }
 
-export function commitMutaionEffectsOnFiber(finishedWork, root) {
+export function commitMutationEffectsOnFiber(finishedWork, root) {
   const flags = finishedWork.flags;
   const current = finishedWork.alternate;
   switch (finishedWork.tag) {
@@ -191,6 +191,11 @@ export function commitPassiveUnmountEffects(finishedWork) {
   commitPassiveUnmountOnFiber(finishedWork);
 }
 
+/**
+ * 递归遍历所有 fiber 节点，检查是否存在 Passive 标记
+ * 存在 Passive 标记的会进行相关 unmount effec hook 的处理
+ * @param {*} finishedWork
+ */
 function commitPassiveUnmountOnFiber(finishedWork) {
   const flags = finishedWork.flags;
   switch (finishedWork.tag) {
@@ -202,6 +207,8 @@ function commitPassiveUnmountOnFiber(finishedWork) {
       if (flags & Passive) {
         commitHookPassiveUnmountEffects(
           finishedWork,
+          // 需要保证 Hook 对应的依赖发生了变更
+          // 以及对应的 Hook 是 effect Hook
           HookHasEffect | HookPassive
         );
       }
@@ -225,6 +232,12 @@ export function commitHookPassiveUnmountEffects(finishedWork, hookFlags) {
   commitHookEffectListUnmount(hookFlags, finishedWork);
 }
 
+/**
+ * 处理 unmount effect
+ * 遍历 effect 链表，并检查是否对应的 tag 是否是 effect Hook 并且存在副作用（依赖发生变更）
+ * @param {*} flags
+ * @param {*} finishedWork
+ */
 function commitHookEffectListUnmount(flags, finishedWork) {
   const updateQueue = finishedWork.updateQueue;
   const lastEffect = updateQueue !== null ? updateQueue.lastEffect : null;
@@ -247,6 +260,11 @@ export function commitPassiveMountEffects(root, finishedWork) {
   commitPassiveMountOnFiber(root, finishedWork);
 }
 
+/**
+ * 递归遍历所有 fiber 节点，检查是否存在 Passive 标记
+ * 存在 Passive 标记的会进行相关 mount effec hook 的处理
+ * @param {*} finishedWork
+ */
 function commitPassiveMountOnFiber(finishedRoot, finishedWork) {
   const flags = finishedWork.flags;
   switch (finishedWork.tag) {
@@ -258,6 +276,8 @@ function commitPassiveMountOnFiber(finishedRoot, finishedWork) {
       if (flags & Passive) {
         commitHookPassiveMountEffects(
           finishedWork,
+          // 需要保证 Hook 对应的依赖发生了变更
+          // 以及对应的 Hook 是 effect Hook
           HookHasEffect | HookPassive
         );
       }
@@ -279,6 +299,13 @@ function commitHookPassiveMountEffects(finishedWork, hookFlags) {
   commitHookEffectListMount(hookFlags, finishedWork);
 }
 
+/**
+ * 处理 mount effect
+ * 遍历 effect 链表，并检查是否对应的 tag 是否是 effect Hook 并且存在副作用（依赖发生变更）
+ * 执行对应的 create 函数，完成 effect 的调用
+ * @param {*} flags
+ * @param {*} finishedWork
+ */
 function commitHookEffectListMount(flags, finishedWork) {
   const updateQueue = finishedWork.updateQueue;
   const lastEffect = updateQueue !== null ? updateQueue.lastEffect : null;
@@ -286,7 +313,7 @@ function commitHookEffectListMount(flags, finishedWork) {
     const firstEffect = lastEffect.next;
     let effect = firstEffect;
     do {
-      if (effect.tag & (flags === flags)) {
+      if ((effect.tag & flags) === flags) {
         effect.destroy = effect.create();
       }
       effect = effect.next;

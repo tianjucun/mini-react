@@ -4,7 +4,7 @@ import { scheduleCallback } from 'scheduler';
 import { completeWork } from './ReactFiberCompleteWork';
 import { MutationMask, NoFlags, Passive } from './ReactFiberFlags';
 import {
-  commitMutaionEffectsOnFiber,
+  commitMutationEffectsOnFiber,
   commitPassiveMountEffects,
   commitPassiveUnmountEffects,
 } from './ReactFiberCommitWork';
@@ -117,8 +117,12 @@ function commitRoot(root) {
     (finishedWork.subtreeFlags & Passive) !== NoFlags ||
     (finishedWork.flags & Passive) !== NoFlags
   ) {
+    // 当前已完成的根节点（或者子节点）是否有待处理的 Effect
+    // 默认没有，满足上面的条件后会将相关标识设置为 true
+    // 防止重复调用
     if (!rootDoesHavePassiveEffects) {
       rootDoesHavePassiveEffects = true;
+      // 异步刷新待处理的 Effect
       scheduleCallback(flushPassiveEffects);
     }
   }
@@ -128,10 +132,11 @@ function commitRoot(root) {
   const rootHasEffects = (finishedWork.flags & MutationMask) !== NoFlags;
 
   if (subtreeHasEffects || rootHasEffects) {
-    commitMutaionEffectsOnFiber(finishedWork, root);
+    commitMutationEffectsOnFiber(finishedWork, root);
 
     if (rootDoesHavePassiveEffects) {
       rootDoesHavePassiveEffects = false;
+      // commit 阶段结束后, 会标识当前存在待处理的 Effect 对应的根节点
       rootWithPendingPassiveEffects = root;
     }
   }
