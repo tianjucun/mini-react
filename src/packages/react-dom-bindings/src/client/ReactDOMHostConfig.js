@@ -1,9 +1,11 @@
+import { DefaultEventPriority } from 'react-reconciler/src/ReactEventPriorities';
 import {
   setInitialDOMProperties,
   diffProperties,
   updateProperties,
 } from './ReactDOMComponent';
 import { precacheFiberNode, updateFiberProps } from './ReactDOMComponentTree';
+import { getEventPriority } from 'react-dom-bindings/events/ReactDOMEventListener';
 
 export function appendInitialChild(parent, child) {
   parent.appendChild(child);
@@ -52,4 +54,14 @@ export function commitTextUpdate(textNode, oldText, newText) {
   if (oldText !== newText) {
     textNode.textContent = newText;
   }
+}
+
+export function getCurrentEventPriority() {
+  // window.event 是一个由微软 IE 引入的属性，
+  // 只有当 DOM 事件处理程序被调用的时候会被用到。它的值是当前正在处理的事件对象。
+  const currentEvent = window.event;
+  if (currentEvent === undefined) {
+    return DefaultEventPriority;
+  }
+  return getEventPriority(currentEvent.type);
 }

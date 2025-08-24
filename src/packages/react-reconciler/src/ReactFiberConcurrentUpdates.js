@@ -5,10 +5,11 @@ let concurrentQueues = [];
 
 let concurrentQueuesIndex = 0;
 
-function enqueueUpdate(fiber, queue, update) {
+function enqueueUpdate(fiber, queue, update, lane) {
   concurrentQueues[concurrentQueuesIndex++] = fiber;
   concurrentQueues[concurrentQueuesIndex++] = queue;
   concurrentQueues[concurrentQueuesIndex++] = update;
+  concurrentQueues[concurrentQueuesIndex++] = lane;
 }
 
 export function markUpdateLaneFromFiberToRoot(sourceFiber) {
@@ -28,8 +29,13 @@ export function markUpdateLaneFromFiberToRoot(sourceFiber) {
   return null;
 }
 
-export function enqueueConcurrentHookUpdate(fiber, queue, update) {
-  enqueueUpdate(fiber, queue, update);
+export function enqueueConcurrentHookUpdate(fiber, queue, update, lane) {
+  enqueueUpdate(fiber, queue, update, lane);
+  return markUpdateLaneFromFiberToRoot(fiber);
+}
+
+export function enqueueConcurrentClassUpdate(fiber, queue, update, lane) {
+  enqueueUpdate(fiber, queue, update, lane);
   return markUpdateLaneFromFiberToRoot(fiber);
 }
 
@@ -40,17 +46,20 @@ export function finishQueueingConcurrentUpdates() {
     const fiber = concurrentQueues[i++];
     const queue = concurrentQueues[i++];
     const update = concurrentQueues[i++];
+    const lane = concurrentQueues[i++];
 
-    let pending = queue.pending;
-    if (pending === null) {
-      // A -> A
-      update.next = update;
-    } else {
-      // A -> A
-      // B -> A -> B
-      update.next = pending.next;
-      pending.next = update;
+    if (queue !== null && update !== null) {
+      let pending = queue.pending;
+      if (pending === null) {
+        // A -> A
+        update.next = update;
+      } else {
+        // A -> A
+        // B -> A -> B
+        update.next = pending.next;
+        pending.next = update;
+      }
+      queue.pending = update;
     }
-    queue.pending = update;
   }
 }

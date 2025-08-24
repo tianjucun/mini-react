@@ -1,82 +1,119 @@
-import React, { useEffect, useState, useLayoutEffect } from 'react';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import './style.css';
 
-function observe(targetNode) {
-  // 观察器的配置（需要观察什么变动）
-  const config = { characterData: true };
+function Square({ value, onSquareClick }) {
+  return (
+    <button className='square' onClick={onSquareClick}>
+      {value}
+    </button>
+  );
+}
 
-  // 当观察到变动时执行的回调函数
-  const callback = function (mutationsList, observer) {
-    // Use traditional 'for loops' for IE 11
-    const characterDataMutaion = mutationsList[0];
-    console.log(
-      'The text count was modified',
-      characterDataMutaion.target.textContent
+function Board({ xIsNext, squares, onPlay }) {
+  function handleClick(i) {
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    const nextSquares = squares.slice();
+    if (xIsNext) {
+      nextSquares[i] = 'X';
+    } else {
+      nextSquares[i] = 'O';
+    }
+    onPlay(nextSquares);
+  }
+
+  const winner = calculateWinner(squares);
+  let status;
+  if (winner) {
+    status = 'Winner: ' + winner;
+  } else {
+    status = 'Next player: ' + (xIsNext ? 'X' : 'O');
+  }
+
+  return (
+    <div>
+      <div className='status'>{status}</div>
+      <div className='board-row'>
+        <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
+        <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
+        <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
+      </div>
+      <div className='board-row'>
+        <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
+        <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
+        <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
+      </div>
+      <div className='board-row'>
+        <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
+        <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
+        <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
+      </div>
+    </div>
+  );
+}
+
+function Game() {
+  const [history, setHistory] = useState([Array(9).fill(null)]);
+  const [currentMove, setCurrentMove] = useState(0);
+  const xIsNext = currentMove % 2 === 0;
+  const currentSquares = history[currentMove];
+
+  function handlePlay(nextSquares) {
+    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    setHistory(nextHistory);
+    setCurrentMove(nextHistory.length - 1);
+  }
+
+  function jumpTo(nextMove) {
+    setCurrentMove(nextMove);
+  }
+
+  const moves = history.map((squares, move) => {
+    let description;
+    if (move > 0) {
+      description = 'Go to move #' + move;
+    } else {
+      description = 'Go to game start';
+    }
+    return (
+      <li key={move}>
+        <button onClick={() => jumpTo(move)}>{description}</button>
+      </li>
     );
-  };
+  });
 
-  // 创建一个观察器实例并传入回调函数
-  const observer = new MutationObserver(callback);
-
-  // 以上述配置开始观察目标节点
-  observer.observe(targetNode, config);
-
-  return () => {
-    // 之后，可停止观察
-    observer.disconnect();
-  };
+  return (
+    <div className='game'>
+      <div className='game-board'>
+        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+      </div>
+      <div className='game-info'>
+        <ol>{moves}</ol>
+      </div>
+    </div>
+  );
 }
 
-function App() {
-  const [count, setCount] = useState(1);
-
-  useEffect(() => {
-    console.log('render effect', count);
-    const parentNode = document.getElementsByTagName('h1')[0];
-    const textNode = parentNode.childNodes[1];
-
-    // 观察对应的执行顺序
-    // destroy layout effect 1
-    // update layout effect 2 textContent:  Hello React Hooks 2
-    // The text count was modified 2
-    // update effect 2 textContent:  Hello React Hooks 2
-
-    // 可以看出 layout effect 是在 页面渲染 前执行的
-    // 而 effect 是在 页面渲染后执行的
-    const destroy = observe(textNode);
-    return () => {
-      destroy();
-    };
-  }, []);
-
-  useLayoutEffect(() => {
-    console.log('mount1 effect', count);
-  }, []);
-  useLayoutEffect(() => {
-    console.log('mount2 effect', count);
-  }, []);
-  useLayoutEffect(() => {
-    console.log('mount3 effect', count);
-  }, []);
-  useEffect(() => {
-    const textContent = document.getElementsByTagName('h1')[0].textContent;
-    console.log('update effect', count, 'textContent: ', textContent);
-  }, [count]);
-  useLayoutEffect(() => {
-    const textContent = document.getElementsByTagName('h1')[0].textContent;
-    console.log('update layout effect', count, 'textContent: ', textContent);
-    return () => {
-      console.log('destroy layout effect', count);
-    };
-  }, [count]);
-
-  // useEffect(() => {
-  //   console.log('update effect', count);
-  //   return () => {
-  //     console.log('destroy effect', count);
-  //   };
-  // }, [count]);
-  return <h1 onClick={() => setCount(count + 1)}>Hello React Hooks {count}</h1>;
+function calculateWinner(squares) {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+createRoot(document.getElementById('root')).render(<Game />);

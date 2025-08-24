@@ -1,13 +1,34 @@
 import { getEventTarget } from './getEventTarget';
 import { getClosesInstanceFromNode } from 'react-dom-bindings/client/ReactDOMComponentTree';
 import { dispatchEventForPluginEventSystem } from './DOMPluginEventSystem';
+import {
+  ContinuousEventPriority,
+  DefaultEventPriority,
+  DiscreteEventPriority,
+  getCurrentUpdatePriority,
+  setCurrentUpdatePriority,
+} from 'react-reconciler/src/ReactEventPriorities';
 
 export function createEventListenerWrapperWithPriority(
   targetContainer,
   domEventName,
   eventSystemFlags
 ) {
-  const listenerWrapper = dispatchDiscreteEvent;
+  let eventPriority = getEventPriority(domEventName);
+  let listenerWrapper;
+
+  switch (eventPriority) {
+    case DiscreteEventPriority:
+      listenerWrapper = dispatchDiscreteEvent;
+      break;
+    case ContinuousEventPriority:
+      listenerWrapper = dispatchContinuousEvent;
+    case DefaultEventPriority:
+    default:
+      listenerWrapper = dispatchEvent;
+      break;
+  }
+
   return listenerWrapper.bind(
     null,
     domEventName,
@@ -22,7 +43,28 @@ function dispatchDiscreteEvent(
   targtContainer,
   nativeEvent
 ) {
-  dispatchEvent(domEventName, eventSystemFlags, targtContainer, nativeEvent);
+  let previousPriority = getCurrentUpdatePriority();
+  try {
+    setCurrentUpdatePriority(DiscreteEventPriority);
+    dispatchEvent(domEventName, eventSystemFlags, targtContainer, nativeEvent);
+  } finally {
+    setCurrentUpdatePriority(previousPriority);
+  }
+}
+
+function dispatchContinuousEvent(
+  domEventName,
+  eventSystemFlags,
+  container,
+  nativeEvent
+) {
+  let previousPriority = getCurrentUpdatePriority();
+  try {
+    setCurrentUpdatePriority(ContinuousEventPriority);
+    dispatchEvent(domEventName, eventSystemFlags, container, nativeEvent);
+  } finally {
+    setCurrentUpdatePriority(previousPriority);
+  }
 }
 
 export function dispatchEvent(
@@ -40,4 +82,15 @@ export function dispatchEvent(
     targetInstance,
     targetContainer
   );
+}
+
+export function getEventPriority(domEventName) {
+  switch (domEventName) {
+    case 'click':
+      return DiscreteEventPriority;
+    case 'drage':
+      return ContinuousEventPriority;
+    default:
+      return DefaultEventPriority;
+  }
 }

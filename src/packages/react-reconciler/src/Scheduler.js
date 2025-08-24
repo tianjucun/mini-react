@@ -1,19 +1,17 @@
 import {
   scheduleCallback,
-  shouldYieldToHost as shouldYield,
-  ImmediatePriority,
-  UserBlockingPriority,
-  NormalPriority,
-  LowPriority,
-  IdlePriority,
-} from './src/forks/Scheduler';
-
-export {
   shouldYield,
   ImmediatePriority,
   UserBlockingPriority,
   NormalPriority,
-  LowPriority,
   IdlePriority,
+} from 'scheduler';
+
+export {
   scheduleCallback,
+  shouldYield,
+  ImmediatePriority,
+  UserBlockingPriority,
+  NormalPriority,
+  IdlePriority,
 };

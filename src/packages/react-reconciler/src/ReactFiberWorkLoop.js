@@ -1,6 +1,5 @@
 import { createWorkInProgress } from './ReactFiber';
 import { beginWork } from './ReactFiberBeginWork';
-import { scheduleCallback } from 'scheduler';
 import { completeWork } from './ReactFiberCompleteWork';
 import { MutationMask, NoFlags, Passive } from './ReactFiberFlags';
 import {
@@ -10,11 +9,48 @@ import {
   commitLayoutEffects,
 } from './ReactFiberCommitWork';
 import { finishQueueingConcurrentUpdates } from './ReactFiberConcurrentUpdates';
+import {
+  NormalPriority,
+  ImmediatePriority,
+  UserBlockingPriority,
+  scheduleCallback,
+  IdlePriority,
+  shouldYield,
+} from './Scheduler';
+import {
+  ContinuousEventPriority,
+  DefaultEventPriority,
+  DiscreteEventPriority,
+  getCurrentUpdatePriority,
+  IdleEventPriority,
+  lanesToEventPriority,
+  setCurrentUpdatePriority,
+} from './ReactEventPriorities';
+import {
+  getHighestPriorityLane,
+  getNextLanes,
+  includesBlockingLane,
+  markRootUpdated,
+  NoLanes,
+  SyncLane,
+} from './ReactFiberLane';
+import { getCurrentEventPriority } from 'react-dom-bindings/client/ReactDOMHostConfig';
+import {
+  flushSyncCallbacks,
+  scheduleSyncCallback,
+} from './ReactFiberSyncTaskQueue';
 
 // 跟踪 React 协调过程中正在处理的 Fiber 节点
 let workInProgress = null;
 let rootDoesHavePassiveEffects = false;
 let rootWithPendingPassiveEffects = null;
+
+let workInProgressRootRenderLanes = NoLanes;
+let workInProgressRoot = null;
+
+const RootInProgress = 0;
+const RootCompleted = 5;
+let workInProgressRootExitStatus = RootInProgress;
 
 function flushPassiveEffects() {
   if (rootWithPendingPassiveEffects !== null) {
@@ -24,7 +60,8 @@ function flushPassiveEffects() {
   }
 }
 
-export function scheduleUpdateOnFiber(root) {
+export function scheduleUpdateOnFiber(root, fiber, lane) {
+  markRootUpdated(root, lane);
   ensureRootIsScheduled(root);
 }
 
@@ -33,29 +70,131 @@ export function scheduleUpdateOnFiber(root) {
  * @param {*} root
  */
 function ensureRootIsScheduled(root) {
-  scheduleCallback(performConcurrentWorkOnRoot.bind(null, root));
+  let nextLanes = getNextLanes(
+    root,
+    root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes
+  );
+
+  if (nextLanes === NoLanes) {
+    return;
+  }
+
+  let newCallbackPriority = getHighestPriorityLane(nextLanes);
+  let newCallbackNode;
+  if (newCallbackPriority === SyncLane) {
+    scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root));
+    queueMicrotask(flushSyncCallbacks);
+    newCallbackNode = null;
+  } else {
+    let schedulerPriorityLevel;
+    switch (lanesToEventPriority(nextLanes)) {
+      case DiscreteEventPriority:
+        schedulerPriorityLevel = ImmediatePriority;
+        break;
+      case ContinuousEventPriority:
+        schedulerPriorityLevel = UserBlockingPriority;
+        break;
+      case DefaultEventPriority:
+        schedulerPriorityLevel = NormalPriority;
+        break;
+      case IdleEventPriority:
+        schedulerPriorityLevel = IdlePriority;
+        break;
+      default:
+        schedulerPriorityLevel = NormalPriority;
+        break;
+    }
+    newCallbackNode = scheduleCallback(
+      schedulerPriorityLevel,
+      performConcurrentWorkOnRoot.bind(null, root)
+    );
+  }
+  root.callbackNode = newCallbackNode;
 }
 
-function performConcurrentWorkOnRoot(root) {
-  renderRootSync(root);
-  // 获取到已完成转换的 fiber 根节点
+function performSyncWorkOnRoot(root) {
+  const lanes = getNextLanes(root);
+  renderRootSync(root, lanes);
   const finishedWork = root.current.alternate;
-  // 在 fiberRoot 上更新 finishedWork
   root.finishedWork = finishedWork;
   commitRoot(root);
+  return null;
 }
 
-function renderRootSync(root) {
-  prepareFreshStack(root);
-  try {
-    workLoopSync();
-  } catch (thrownValue) {
-    console.error('renderRootSync error', thrownValue);
+function performConcurrentWorkOnRoot(root, didTimeout) {
+  const originalCallbackNode = root.callbackNode;
+
+  // TODO:
+  if (originalCallbackNode === null) {
+    return;
+  }
+
+  const lanes = getNextLanes(root, NoLanes);
+  if (lanes === NoLanes) {
+    return null;
+  }
+
+  const shouldTimeSlice = !includesBlockingLane(root, lanes) && !didTimeout;
+  const existStatus = shouldTimeSlice
+    ? renderRootConcurrent(root, lanes)
+    : renderRootSync(root, lanes);
+  if (existStatus !== RootInProgress) {
+    const finishedWork = root.current.alternate;
+    root.finishedWork = finishedWork;
+    commitRoot(root);
+  }
+  if (root.callbackNode === originalCallbackNode) {
+    return performConcurrentWorkOnRoot.bind(null, root);
+  }
+
+  return null;
+}
+
+function renderRootConcurrent(root, lanes) {
+  prepareFreshStack(root, lanes);
+  workLoopConcurrent();
+  if (workInProgress !== null) {
+    return RootInProgress;
+  }
+  return workInProgressRootExitStatus;
+}
+
+function workLoopConcurrent() {
+  while (workInProgress !== null && !shouldYield()) {
+    performUnitOfWork(workInProgress);
   }
 }
 
-function prepareFreshStack(root) {
-  workInProgress = createWorkInProgress(root.current, null);
+function renderRootSync(root, renderLanes) {
+  if (
+    root !== workInProgressRoot ||
+    workInProgressRootRenderLanes !== renderLanes
+  ) {
+    prepareFreshStack(root);
+  }
+  try {
+    workLoopSync();
+  } catch (thrownValue) {
+    // TODO:
+    console.error('renderRootSync error', thrownValue);
+    throw thrownValue;
+  }
+
+  workInProgressRoot = null;
+  workInProgressRootRenderLanes = NoLanes;
+  return workInProgressRootExitStatus;
+}
+
+function prepareFreshStack(root, renderLanes) {
+  if (
+    root !== workInProgressRoot ||
+    workInProgressRootRenderLanes !== renderLanes
+  ) {
+    // TODO:
+    workInProgress = createWorkInProgress(root.current, null);
+  }
+  workInProgressRootRenderLanes = renderLanes;
+  workInProgressRoot = root;
   finishQueueingConcurrentUpdates();
 }
 
@@ -73,7 +212,7 @@ function workLoopSync() {
 function performUnitOfWork(unitOfWork) {
   // 获取到当前 Fiber 节点对应的旧节点
   const current = unitOfWork.alternate;
-  const next = beginWork(current, unitOfWork);
+  const next = beginWork(current, unitOfWork, workInProgressRootRenderLanes);
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
 
   if (next === null) {
@@ -104,6 +243,9 @@ function completeUnitOfWork(unitOfWork) {
     completedWork = returnFiber;
     workInProgress = completedWork;
   }
+  if (workInProgressRootExitStatus === RootInProgress) {
+    workInProgressRootExitStatus = RootCompleted;
+  }
 }
 
 function commitRoot(root) {
@@ -111,6 +253,20 @@ function commitRoot(root) {
   // const container = root.containerInfo;
   // const rootFiber = root.finishedWork;
   // container.appendChild(rootFiber.child.stateNode);
+
+  const previousUpdatePriority = getCurrentUpdatePriority();
+  try {
+    setCurrentUpdatePriority(DiscreteEventPriority);
+    commitRootImpl(root);
+  } finally {
+    setCurrentUpdatePriority(previousUpdatePriority);
+  }
+}
+
+function commitRootImpl(root) {
+  workInProgressRoot = null;
+  workInProgressRootRenderLanes = null;
+  root.callbackNode = null;
 
   const { finishedWork } = root;
 
@@ -124,7 +280,7 @@ function commitRoot(root) {
     if (!rootDoesHavePassiveEffects) {
       rootDoesHavePassiveEffects = true;
       // 异步刷新待处理的 Effect
-      scheduleCallback(flushPassiveEffects);
+      scheduleCallback(NormalPriority, flushPassiveEffects);
     }
   }
 
@@ -145,4 +301,19 @@ function commitRoot(root) {
 
   // 更新 FiberRoot 的 rootFiber 指向
   root.current = finishedWork;
+}
+
+/**
+ * 获取当前的事件优先级
+ * 如果为无优先级的话，返回默认的事件优先级
+ * @returns
+ */
+export function requestUpdateLane() {
+  const updateLane = getCurrentUpdatePriority();
+  if (updateLane !== NoLanes) {
+    return updateLane;
+  }
+  //   const eventLane = getCurrentEventPriority();
+  // return eventLane;
+  return DefaultEventPriority;
 }

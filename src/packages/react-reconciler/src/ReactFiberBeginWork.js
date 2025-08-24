@@ -56,7 +56,7 @@ function updateFunctionComponent(current, workInProgress, type) {
   return reconcilerChildren(current, workInProgress, nextChldren);
 }
 
-export function beginWork(current, workInProgress) {
+export function beginWork(current, workInProgress, lanes) {
   switch (workInProgress.tag) {
     case IndeterminateComponent:
       return mountIndeterminateComponent(

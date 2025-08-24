@@ -5,7 +5,23 @@ import {
   IndeterminateComponent,
 } from './ReactWorkTag';
 import { NoFlags } from './ReactFiberFlags';
+import { NoLanes } from './ReactFiberLane';
 
+/**
+ * Fiber 节点构造函数，用于创建 React 协调过程中的工作单元
+ * 每个 Fiber 节点对应一个组件或 DOM 元素，保存组件相关信息和工作状态
+ *
+ * 【设计特点】
+ * 相对于传统的虚拟 DOM 实现，Fiber 节点具有一下特性：
+ * 1. 数据结构优化： 采用类链表结构，通过三个指针替代传统的 parent/children 包含关系，
+ * 为协调过程中的任务中断与恢复提供了可能。
+ * 2. 功能增强：承载了优先级管理、副作用追踪、双缓存等额外信息，
+ * 支持更新精细化的渲染控制。
+ *
+ * @param { number } tag - 节点类型标识 (入函数组件、类组件、宿主节点（例如浏览器环境下的原生 DOM）等)
+ * @param { Object } pendingProps - 待处理的属性对象，组件接收的新 props
+ * @param {*} key 节点的唯一标识，用于列表 diff 优化
+ */
 function FiberNode(tag, pendingProps, key) {
   // 实例相关属性
 
@@ -62,7 +78,7 @@ function FiberNode(tag, pendingProps, key) {
   // 渲染模式（如严格模式、并发模式等）
   this.mode = null;
   // 优先级相关的车道标记，用于调度
-  this.lanes = null;
+  this.lanes = NoLanes;
 
   // 副作用相关
 
@@ -83,6 +99,12 @@ export function createFiber(tag, pendingProps, key) {
   return new FiberNode(tag, pendingProps, key);
 }
 
+/**
+ * RootFiber 是 Fiber 节点
+ * RootFiber 是整颗 Fiber 树的根节点
+ * Root Fiber 是「台前组织者」，负责组件树的结构和更新；
+ * @returns
+ */
 export function createHostRootFiber() {
   return createFiber(HostRoot, null, null);
 }
